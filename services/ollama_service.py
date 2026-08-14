@@ -5,15 +5,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OLLAMA_URL = os.getenv("OLLAMA_BASE_URL") or os.getenv("OLLAMA_URL") or "http://localhost:11434"
-# Modelo optimizado para respuestas rápidas
 MODELO = os.getenv("OLLAMA_MODEL") or "phi3"
 
 def generar_resumen(texto_contexto: str, modelo: str = MODELO) -> str:
     url = f"{OLLAMA_URL}/api/generate"
+
+    prompt_sistema = (
+        "Actúa como un analista experto de sistemas y negocios. "
+        "Tu tarea es leer el texto proporcionado y generar un Reporte Ejecutivo claro y conciso.\n"
+        "El reporte debe contener estrictamente la siguiente estructura:\n"
+        "1. Resumen principal (máximo 3 líneas).\n"
+        "2. Puntos clave (en formato de viñetas).\n"
+        "3. Conclusión o recomendación.\n\n"
+        f"Texto a analizar:\n{texto_contexto}"
+    )
     
     payload = {
         "model": modelo,
-        "prompt": texto_contexto,
+        "prompt": prompt_sistema,
         "stream": False,
         "options": {
             "temperature": 0.3,
@@ -49,4 +58,4 @@ def get_ollama_tags():
         models = response.json().get("models", [])
         return [m.get("name") for m in models]
     except Exception as e:
-        return ["phi3", "llama3"] # Fallback models
+        return ["phi3", "llama3"] # Fallback models
