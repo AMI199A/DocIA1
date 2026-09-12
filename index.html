@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocIA - Generador de Reportes Ejecutivos</title>
+    <meta name="description" content="DocIA procesa tus documentos y genera reportes ejecutivos inteligentes usando IA y RAG.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Librerías para lectura de PDF y DOCX en el cliente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.5.1/mammoth.browser.min.js"></script>
+    <!-- Chart.js para métricas del dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Pantalla de Inicio de Sesión Rápida -->
+    <div id="login-container" class="login-wrapper">
+        <div class="login-backdrop-glow"></div>
+        <div class="login-card">
+            <div class="login-header">
+                <div class="brand-container login-brand">
+                    <div class="brand-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z" fill="url(#loginBrandGrad)" />
+                            <defs>
+                                <linearGradient id="loginBrandGrad" x1="3" y1="2" x2="21" y2="20" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#f4f4f5"/>
+                                    <stop offset="1" stop-color="#a1a1aa"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-title">DocIA</span>
+                        <span class="brand-badge">PRO</span>
+                    </div>
+                </div>
+                <h2 class="login-title" id="authTitle">Iniciar Sesión</h2>
+                <p class="login-subtitle" id="authSubtitle">Ingresa a tu espacio de trabajo inteligente</p>
+            </div>
+
+            <!-- Selector de Pestañas: Iniciar Sesión / Crear Cuenta -->
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab-btn active" id="tab-login-btn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+                    <span>Iniciar Sesión</span>
+                </button>
+                <button type="button" class="auth-tab-btn" id="tab-register-btn">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                    <span>Crear Cuenta</span>
+                </button>
+            </div>
+
+            <!-- Formulario 1: Iniciar Sesión -->
+            <form id="login-form" class="login-form" autocomplete="on">
+                <div id="login-error-msg" class="login-error hidden"></div>
+
+                <div class="login-form-group">
+                    <label for="login-user" class="login-form-label">Usuario o Email</label>
+                    <div class="login-input-wrap">
+                        <svg class="login-input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <input type="text" id="login-user" class="login-input" placeholder="ej. admin o correo@empresa.com" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="login-form-group">
+                    <label for="login-pass" class="login-form-label">Contraseña</label>
+                    <div class="login-input-wrap">
+                        <svg class="login-input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <input type="password" id="login-pass" class="login-input" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                </div>
+
+                <button type="submit" id="login-submit-btn" class="btn-primary login-submit-btn">
+                    <span>Ingresar al Sistema</span>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+
+            <!-- Formulario 2: Crear Cuenta (Registro) -->
+            <form id="register-form" class="login-form hidden" autocomplete="on">
+                <div id="register-error-msg" class="login-error hidden"></div>
+                <div id="register-success-msg" class="login-success hidden"></div>
+
+                <div class="login-form-group">
+                    <label for="reg-name" class="login-form-label">Nombre Completo</label>
+                    <div class="login-input-wrap">
+                        <svg class="login-input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <input type="text" id="reg-name" class="login-input" placeholder="Tu nombre completo" required autocomplete="name">
+                    </div>
+                </div>
+
+                <div class="login-form-group">
+                    <label for="reg-user" class="login-form-label">Usuario o Email</label>
+                    <div class="login-input-wrap">
+                        <svg class="login-input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        <input type="text" id="reg-user" class="login-input" placeholder="Nombre de usuario o Email" required autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="login-form-group">
+                    <label for="reg-pass" class="login-form-label">Contraseña</label>
+                    <div class="login-input-wrap">
+                        <svg class="login-input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <input type="password" id="reg-pass" class="login-input" placeholder="Crea una contraseña segura" required autocomplete="new-password">
+                    </div>
+                </div>
+
+                <button type="submit" id="register-submit-btn" class="btn-primary login-submit-btn">
+                    <span>Registrarse</span>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+
+            <!-- Alternancia rápida inferior -->
+            <div class="auth-switch-wrap">
+                <p class="auth-switch-text" id="switchToRegisterWrap">¿No tienes cuenta? <button type="button" class="auth-switch-link" id="linkToRegister">Crear cuenta</button></p>
+                <p class="auth-switch-text hidden" id="switchToLoginWrap">¿Ya tienes cuenta? <button type="button" class="auth-switch-link" id="linkToLogin">Iniciar Sesión</button></p>
+            </div>
+
+            <!-- Demo box -->
+            <div class="login-demo-box" id="loginDemoBox">
+                <div class="demo-box-header">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Credenciales de prueba / Demo</span>
+                </div>
+                <div class="demo-credentials-pill" id="fillDemoCredentialsBtn" title="Clic para auto-completar">
+                    <span class="demo-cred-item">Usuario: <strong>admin</strong></span>
+                    <span class="demo-divider">•</span>
+                    <span class="demo-cred-item">Pass: <strong>admin123</strong></span>
+                    <span class="demo-badge-action">Auto-completar</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal de la Aplicación -->
+    <div id="app-container" class="hidden">
+        <div class="app-layout">
+            <!-- Sidebar Menú Lateral Estilo IA (ChatGPT / Gemini) -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-header">
+                    <div class="brand-container">
+                        <div class="brand-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z" fill="url(#brandGrad)" />
+                                <defs>
+                                    <linearGradient id="brandGrad" x1="3" y1="2" x2="21" y2="20" gradientUnits="userSpaceOnUse">
+                                        <stop stop-color="#f4f4f5"/>
+                                        <stop offset="1" stop-color="#a1a1aa"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
+                        <div class="brand-text">
+                            <span class="brand-title">DocIA</span>
+                            <span class="brand-badge">PRO</span>
+                        </div>
+                    </div>
+                    <div class="sidebar-header-actions">
+                        <button class="sidebar-toggle-btn desktop-only" id="btn-toggle-sidebar" title="Ocultar barra lateral" aria-label="Ocultar barra lateral">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                        </button>
+                        <button class="sidebar-toggle-btn mobile-only" id="closeSidebarBtn" aria-label="Cerrar menú">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ítems Superiores Estilo IA -->
+                <div class="sidebar-top-nav">
+                    <!-- 1. Nueva conversación -->
+                    <button class="sidebar-btn-chat" id="btnNewChat" data-tab="sec-generator">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Nueva conversación</span>
+                    </button>
+
+                    <!-- 2. Buscar conversaciones -->
+                    <div class="sidebar-search-box">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="searchReportsInput" placeholder="Buscar conversaciones..." autocomplete="off" aria-label="Buscar conversaciones">
+                    </div>
+
+                    <!-- 3. Navegación Lateral -->
+                    <nav class="sidebar-nav">
+                        <button class="sidebar-nav-item active" id="tabDashboard" data-tab="sec-dashboard">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 14a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1v-5zM14 11a1 1 0 011-1h4a1 1 0 011 1v8a1 1 0 01-1 1h-4a1 1 0 01-1-1v-8z"></path></svg>
+                            <span>Dashboard</span>
+                            <span class="live-indicator" title="Tiempo real activo"></span>
+                        </button>
+                        <button class="sidebar-nav-item" id="tabRAG" data-tab="sec-rag">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            <span>Gestor RAG</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <div class="sidebar-divider"></div>
+
+                <!-- Sección Recientes -->
+                <div class="sidebar-recents-section">
+                    <div class="recents-header">
+                        <span class="recents-label">Recientes</span>
+                        <span class="recents-count" id="recentsCount">0</span>
+                    </div>
+                    <!-- Lista dinámica de reportes recientes -->
+                    <div id="recent-reports-list" class="recent-reports-list">
+                        <div class="recents-loading">
+                            <span class="mini-spinner"></span>
+                            <span>Cargando historial...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Footer con Usuario y Estado API -->
+                <div class="sidebar-footer">
+                    <div class="user-session-card">
+                        <div class="user-avatar" id="userAvatar">A</div>
+                        <div class="user-info">
+                            <span class="user-name" id="userNameDisplay">admin</span>
+                            <span class="user-role">Espacio de trabajo</span>
+                        </div>
+                        <button class="btn-logout-sidebar" id="btnLogoutSidebar" title="Cerrar Sesión" aria-label="Cerrar Sesión">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        </button>
+                    </div>
+                    <div class="api-status-card">
+                        <span class="status-dot" id="apiStatusDot"></span>
+                        <div class="status-info">
+                            <span class="status-label" id="apiStatusText">Verificando API...</span>
+                            <span class="status-sub">Ollama & Backend</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content Wrapper -->
+            <div class="main-wrapper">
+                <!-- Top Navbar -->
+                <header class="top-navbar">
+                    <div class="top-nav-left">
+                        <button class="sidebar-expand-btn hidden" id="btn-expand-sidebar" title="Mostrar barra lateral" aria-label="Mostrar barra lateral">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                        </button>
+                        <button class="sidebar-toggle-btn mobile-only" id="openSidebarBtn" aria-label="Abrir menú">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        </button>
+                        <div class="page-title-wrap">
+                            <h1 id="pageTitle">Dashboard & Métricas</h1>
+                            <p id="pageSubtitle">Monitoreo en tiempo real del motor IA y generación de reportes</p>
+                        </div>
+                    </div>
+                    <div class="top-nav-right">
+                        <div class="quick-stats-pill">
+                            <span class="pulse-ring"></span>
+                            <span id="topLiveStatus">Sistema activo</span>
+                        </div>
+                        <button class="btn-logout-top" id="btnLogoutTop" title="Cerrar Sesión" aria-label="Cerrar Sesión">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Marca de Agua Geométrica de Fondo (Zinc / Esmeralda) -->
+                <div class="watermark-bg" aria-hidden="true">
+                    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="wmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#f4f4f5" stop-opacity="0.03" />
+                                <stop offset="100%" stop-color="#10b981" stop-opacity="0.015" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M50 30 h70 l30 30 v110 h-100 z" fill="none" stroke="url(#wmGradient)" stroke-width="2" />
+                        <path d="M120 30 v30 h30" fill="none" stroke="url(#wmGradient)" stroke-width="2" />
+                        <!-- Icono central de IA / Sparkle -->
+                        <path d="M100 80 L103 95 L118 98 L103 101 L100 116 L97 101 L82 98 L97 95 Z" fill="url(#wmGradient)" />
+                    </svg>
+                </div>
+
+                <!-- Main Container -->
+                <main class="content-container">
+                    <!-- Pestaña 1: Panel de Control y Métricas (Dashboard) -->
+                    <section id="sec-dashboard" class="tab-content dashboard-section">
+                        <div class="dashboard-header">
+                            <div class="dashboard-title-box">
+                                <h2>Panel de Control en Tiempo Real</h2>
+                                <p class="dashboard-desc">Estadísticas procesadas automáticamente cada 5 segundos</p>
+                            </div>
+                            <span class="badge info live-badge">
+                                <span class="pulse-dot"></span> Polling en Vivo
+                            </span>
+                        </div>
+                        
+                        <div class="metrics-grid">
+                            <div class="card-metric">
+                                <div class="metric-icon metric-icon-blue">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-title">Reportes Generados</span>
+                                    <span class="metric-value" id="metricReportes">--</span>
+                                    <span class="metric-subtext text-success">▲ En disco</span>
+                                </div>
+                            </div>
+
+                            <div class="card-metric">
+                                <div class="metric-icon metric-icon-purple">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-title">Documentos RAG</span>
+                                    <span class="metric-value" id="metricDocumentos">--</span>
+                                    <span class="metric-subtext">Indexados</span>
+                                </div>
+                            </div>
+
+                            <div class="card-metric">
+                                <div class="metric-icon metric-icon-emerald">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path></svg>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-title">Plantillas Activas</span>
+                                    <span class="metric-value" id="metricPlantillas">--</span>
+                                    <span class="metric-subtext">PDF & DOCX</span>
+                                </div>
+                            </div>
+
+                            <div class="card-metric">
+                                <div class="metric-icon metric-icon-amber">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                </div>
+                                <div class="metric-data">
+                                    <span class="metric-title">Velocidad Promedio</span>
+                                    <span class="metric-value" id="metricVelocidad">--</span>
+                                    <span class="metric-subtext text-accent">Tiempo Ollama</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="charts-grid">
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h3>Actividad Semanal</h3>
+                                        <p class="chart-subtitle">Reportes procesados por día</p>
+                                    </div>
+                                    <span class="chart-badge">En Vivo</span>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="actividadChart"></canvas>
+                                </div>
+                            </div>
+
+                            <div class="chart-card">
+                                <div class="chart-header">
+                                    <div>
+                                        <h3>Tendencia de Uso</h3>
+                                        <p class="chart-subtitle">Tokens procesados por franja horaria</p>
+                                    </div>
+                                    <span class="chart-badge">Tokens / día</span>
+                                </div>
+                                <div class="chart-container">
+                                    <canvas id="tendenciaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Pestaña 2: Flujo de Generación de Reportes -->
+                    <section id="sec-generator" class="tab-content hidden generator-wrapper">
+                        <div class="generator-header">
+                            <h2>Generador Inteligente de Reportes</h2>
+                            <p>Carga documentos extensos y obtén síntesis ejecutivas estructuradas con Ollama</p>
+                        </div>
+
+                        <div class="upload-section card-box">
+                            <div class="drag-drop-zone" id="dropZone">
+                                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                <h3>Arrastra y suelta tu archivo aquí</h3>
+                                <p>Soporta archivos .txt, .pdf y .docx</p>
+                                <input type="file" id="fileInput" accept=".txt,.pdf,.docx" hidden>
+                                <button class="btn-secondary" id="browseBtn">Seleccionar Archivo</button>
+                                <div id="fileInfo" class="file-info hidden">
+                                    <div class="file-info-badge">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        <span id="fileName"></span>
+                                    </div>
+                                    <button id="removeFileBtn" class="btn-icon" aria-label="Eliminar archivo">&times;</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="config-section card-box">
+                            <h2>Configuración del Reporte</h2>
+                            <div class="form-group">
+                                <label for="formatSelect">Formato de Salida:</label>
+                                <div class="custom-select">
+                                    <select id="formatSelect">
+                                        <option value="pdf">Documento PDF (.pdf)</option>
+                                        <option value="docx">Documento Microsoft Word (.docx)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn-primary" id="generateBtn" disabled>
+                                <span>Generar Reporte Maestro</span>
+                                <div class="btn-glow"></div>
+                            </button>
+                        </div>
+
+                        <div class="result-section card-box hidden" id="resultSection">
+                            <div class="loader-container hidden" id="loader">
+                                <div class="spinner"></div>
+                                <p class="loader-text">Procesando documento con IA...</p>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar"></div>
+                                </div>
+                            </div>
+
+                            <div class="result-content hidden" id="resultContent">
+                                <div class="result-header">
+                                    <div>
+                                        <h2 id="resultReportTitle">Reporte Generado Exitosamente</h2>
+                                        <span class="report-date-badge" id="resultReportDate">Hoy</span>
+                                    </div>
+                                    <span class="badge success">Completado</span>
+                                </div>
+                                <div class="report-viewer" id="reportViewer">
+                                    <!-- Contenido IA renderizado aquí -->
+                                </div>
+                                <div class="result-actions">
+                                    <button class="btn-secondary" id="newReportBtn">Nuevo Reporte</button>
+                                    <a href="#" class="btn-primary" id="downloadBtn" download>
+                                        <svg class="download-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                        Descargar Archivo
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="error-container hidden" id="errorContainer">
+                                <div class="error-icon">!</div>
+                                <h3 id="errorTitle">Error al procesar</h3>
+                                <p id="errorMessage"></p>
+                                <button class="btn-secondary" id="retryBtn">Intentar de nuevo</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Pestaña 3: Gestor de Documentos (RAG) -->
+                    <section id="sec-rag" class="tab-content hidden rag-section">
+                        <div class="rag-header-wrap">
+                            <div class="rag-header-text">
+                                <span class="rag-header-badge">Espacio de Trabajo</span>
+                                <h2>Gestor de Documentos (RAG)</h2>
+                                <p>Gestiona tus documentos, plantillas y reportes generados para el contexto de IA.</p>
+                            </div>
+                        </div>
+
+                        <div class="rag-card card-box">
+                            <div class="rag-card-header">
+                                <div class="rag-card-info">
+                                    <h3>Gestor de Documentos (RAG)</h3>
+                                    <p>Sube documentos para que la IA los use como contexto.</p>
+                                </div>
+                                <div class="rag-card-actions">
+                                    <input type="file" id="input-file-rag" style="display:none" accept=".pdf,.docx,.txt" multiple>
+                                    <button class="btn-primary btn-upload-rag" id="btn-upload-rag">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                        <span>Subir Documento</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="rag-toolbar">
+                                <div class="rag-search-box">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    <input type="text" id="search-rag" placeholder="Buscar documentos..." autocomplete="off">
+                                </div>
+                            </div>
+
+                            <div class="rag-table-wrapper">
+                                <table class="rag-table">
+                                    <thead>
+                                        <tr>
+                                            <th>NOMBRE DEL ARCHIVO</th>
+                                            <th>FECHA DE SUBIDA</th>
+                                            <th class="text-right">ACCIONES</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rag-table-body">
+                                        <!-- Render dinámico aquí -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+
+        <!-- Backdrop móvil -->
+        <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    </div>
+
+    <script src="app.js?v=10"></script>
+</body>
+</html>
