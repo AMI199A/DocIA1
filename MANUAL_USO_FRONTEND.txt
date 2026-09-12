@@ -1,0 +1,61 @@
+==============================================================================
+                    DOCIA - MANUAL DE USO DE LA INTERFAZ (FRONTEND)
+                    Estética: Zinc Neutral Studio
+==============================================================================
+
+1. REQUISITOS PREVIOS Y EJECUCIÓN DEL SERVIDOR
+------------------------------------------------------------------------------
+* Asegúrate de tener Python instalado con las dependencias necesarias.
+* Inicia el servidor ejecutando en la terminal:
+    python main.py
+* Abre tu navegador e ingresa a la dirección local:
+    http://127.0.0.1:8000/
+
+
+2. NAVEGACIÓN Y PANEL LATERAL (SIDEBAR)
+------------------------------------------------------------------------------
+* La interfaz cuenta con una barra lateral izquierda funcional y colapsable.
+* Haz clic en el botón de hamburguesa / colapso en la esquina superior izquierda
+  para retraer o desplegar el panel. 
+* El estado del sidebar (contraído o expandido) se guarda automáticamente en el 
+  almacenamiento local del navegador (localStorage).
+
+
+3. AUTENTICACIÓN Y REGISTRO DE USUARIOS
+------------------------------------------------------------------------------
+* Accede a la pestaña o modal de Autenticación.
+* Formulario de Registro (Register):
+    1. Ingresa tu correo electrónico y contraseña.
+    2. Haz clic en "Registrarse". El sistema validará que el usuario no exista 
+       previamente y guardará el registro.
+* Formulario de Inicio de Sesión (Login):
+    1. Introduce las credenciales registradas.
+    2. Al autenticarte correctamente, el token y estado de sesión se 
+       conservarán en el navegador para navegar por las funciones de la app.
+
+
+4. GESTIÓN Y ANÁLISIS DE DOCUMENTOS (RAG / AI)
+------------------------------------------------------------------------------
+* Subida de Archivos:
+    1. Dirígete a la sección de Carga de Documentos.
+    2. Arrastra o selecciona tus archivos (PDF, TXT, etc.).
+    3. El sistema los procesará y los almacenará en el directorio local `/archivos_rag`.
+* Consultas y Generación de Reportes:
+    1. Utiliza la barra de entrada de consultas para realizar preguntas sobre 
+       los documentos procesados.
+    2. Presiona "Enviar" o Enter para interactuar con la IA de DocIA.
+    3. Visualiza las métricas y los gráficos en el dashboard principal 
+       diseñados bajo la paleta Zinc Neutral (#09090b / #10b981).
+
+
+5. MARCA DE AGUA Y LOGO
+------------------------------------------------------------------------------
+* En la barra superior de la pestaña del navegador observarás el Favicon 
+  esmeralda estilizado.
+* En el fondo de la pantalla de trabajo se proyecta una marca de agua SVG tenue
+  con opacidad baja y `pointer-events: none`, permitiendo hacer clic sobre 
+  cualquier elemento superior sin obstrucción.
+
+==============================================================================
+               Desarrollado para DocIA - Rama: frontend
+==============================================================================
