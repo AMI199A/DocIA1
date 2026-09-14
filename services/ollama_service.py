@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-MODELO = os.getenv("OLLAMA_MODEL", "llama3")
+MODELO = os.getenv("OLLAMA_MODEL", "phi3")
 
 def generar_resumen(texto_contexto: str) -> str:
     url = f"{OLLAMA_URL}/api/generate"

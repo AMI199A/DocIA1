@@ -2,6 +2,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from services.ollama_service import generar_resumen
 from services.file_generator import crear_pdf, crear_docx
+from fastapi.middleware.cors import CORSMiddleware
+
+
 
 app = FastAPI(title="DocIA API", version="1.0.0")
 
@@ -36,3 +39,27 @@ def generar_reporte(req: DocumentRequest):
         "contenido_ia": resumen_ejecutivo,
         "ruta_archivo": ruta_archivo
     }
+@app.get("/api/v1/health")
+def health_check():
+    # Esta ruta le avisa al frontend que el backend está encendido
+    return {"status": "ok", "message": "API de DocIA conectada y funcionando"}
+
+@app.get("/api/v1/dashboard/stats")
+def get_dashboard_stats():
+    # Esta ruta envía datos de prueba para los gráficos/estadísticas del frontend
+    return {
+        "documentosGenerados": 0,
+        "usuariosActivos": 1,
+        "estadoOllama": "Conectado"
+    }
+
+# Configuración de CORS para permitir la comunicación con el frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Permite peticiones desde cualquier origen (Live Server, etc.)
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos los métodos (GET, POST, OPTIONS, etc.)
+    allow_headers=["*"],  # Permite todos los encabezados
+)
+
+
