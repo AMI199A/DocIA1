@@ -484,8 +484,21 @@ async def eliminar_documento_rag(filename: str):
             raise HTTPException(status_code=500, detail=f"Error eliminando archivo: {str(e)}")
     raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
-@app.get("/", response_class=FileResponse)
-async def read_index():
-    return "index.html"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+INDEX_FILE = os.path.join(BASE_DIR, "index.html")
 
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
+@app.get("/")
+async def read_index():
+    try:
+        if os.path.exists(INDEX_FILE):
+            return FileResponse(path=INDEX_FILE, media_type="text/html")
+        elif os.path.exists("index.html"):
+            return FileResponse(path="index.html", media_type="text/html")
+        else:
+            raise HTTPException(status_code=404, detail="index.html no encontrado en el servidor.")
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Error cargando index.html: {str(e)}")
+
+app.mount("/", StaticFiles(directory=BASE_DIR, html=True), name="static")
