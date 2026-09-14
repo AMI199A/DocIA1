@@ -156,15 +156,11 @@ async def process_report(task_id: str, texto: str, formato: str):
         tasks_db[task_id] = {"status": "error", "detail": str(e), "timestamp": time.time()}
 
 @app.post("/api/v1/reportes/generar")
-def generar_reporte(req: DocumentRequest, background_tasks: BackgroundTasks):
-    task_id = str(uuid.uuid4())
-    tasks_db[task_id] = {
-        "status": "processing",
-        "timestamp": time.time(),
-        "formato": req.formato.lower()
-    }
+async def generar_reporte(req: DocumentRequest, background_tasks: BackgroundTasks):
+    task_id = uuid.uuid4().hex[:12]
+    tasks_db[task_id] = {"status": "processing", "timestamp": time.time()}
     background_tasks.add_task(process_report, task_id, req.texto, req.formato)
-    return {"task_id": task_id, "status": "processing"}
+    return {"task_id": task_id, "status": "processing", "message": "Reporte en generación"}
 
 @app.get("/api/v1/reportes/estado/{task_id}")
 def obtener_estado_reporte(task_id: str):
@@ -302,8 +298,20 @@ def obtener_metricas_dashboard():
 async def descargar_reporte(file_name: str):
     file_path = os.path.join(DIR_ARCHIVOS, file_name)
     if os.path.exists(file_path):
-        return FileResponse(path=file_path, filename=file_name, media_type='application/octet-stream')
-    return {"error": "Archivo no encontrado"}
+        # Determinar media_type correcto para que el navegador pueda abrir el archivo
+        if file_name.endswith(".pdf"):
+            media = "application/pdf"
+        elif file_name.endswith(".docx"):
+            media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        else:
+            media = "application/octet-stream"
+        return FileResponse(
+            path=file_path,
+            filename=file_name,
+            media_type=media,
+            headers={"Content-Disposition": f'inline; filename="{file_name}"'}
+        )
+    raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
 @app.delete("/api/v1/reportes/{filename}")
 async def eliminar_reporte(filename: str):

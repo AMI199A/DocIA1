@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchReportsInput = document.getElementById('searchReportsInput');
     const recentReportsList = document.getElementById('recent-reports-list');
     const recentsCount = document.getElementById('recentsCount');
-    
+
     const pageTitle = document.getElementById('pageTitle');
     const pageSubtitle = document.getElementById('pageSubtitle');
     const topLiveStatus = document.getElementById('topLiveStatus');
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeFileBtn = document.getElementById('removeFileBtn');
     const generateBtn = document.getElementById('generateBtn');
     const formatSelect = document.getElementById('formatSelect');
-    
+
     const resultSection = document.getElementById('resultSection');
     const loader = document.getElementById('loader');
     const resultContent = document.getElementById('resultContent');
@@ -30,11 +30,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const newReportBtn = document.getElementById('newReportBtn');
     const resultReportTitle = document.getElementById('resultReportTitle');
     const resultReportDate = document.getElementById('resultReportDate');
-    
+
     const errorContainer = document.getElementById('errorContainer');
     const errorMessage = document.getElementById('errorMessage');
     const retryBtn = document.getElementById('retryBtn');
-    
+
     const apiStatusDot = document.getElementById('apiStatusDot');
     const apiStatusText = document.getElementById('apiStatusText');
 
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnExpandSidebar.classList.add('hidden');
             }
         }
-        
+
         try {
             localStorage.setItem("sidebar_collapsed", collapsed ? "true" : "false");
         } catch (e) {
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let filtered = recientes;
         if (query.trim()) {
             const q = query.toLowerCase();
-            filtered = recientes.filter(r => 
+            filtered = recientes.filter(r =>
                 (r.nombre && r.nombre.toLowerCase().includes(q)) ||
                 (r.archivo && r.archivo.toLowerCase().includes(q)) ||
                 (r.preview && r.preview.toLowerCase().includes(q))
@@ -372,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="recent-item-date">${item.fecha} • ${item.tamano_kb} KB</span>
                 </div>
                 <div class="recent-item-actions">
-                    <a href="${item.url_descarga}" class="recent-item-action" title="Descargar" download onclick="event.stopPropagation()">
+                    <a href="${API_URL}${item.url_descarga}" class="recent-item-action" title="Descargar" download onclick="event.stopPropagation()">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                     </a>
                     <button class="recent-item-action btn-delete-report" title="Eliminar reporte" data-file="${item.archivo}" aria-label="Eliminar reporte">
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 const filename = btn.getAttribute('data-file');
                 if (!filename) return;
 
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (activeItem && activeItem.classList.contains('active')) {
                             if (resultSection) resultSection.classList.add('hidden');
                         }
-                        
+
                         await cargarReportesRecientes();
                         await actualizarDashboard();
                     } else {
@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Open & View a selected recent report
     function openRecentReport(report) {
         switchTab('sec-generator');
-        
+
         resultSection.classList.remove('hidden');
         loader.classList.add('hidden');
         errorContainer.classList.add('hidden');
@@ -454,11 +454,12 @@ document.addEventListener('DOMContentLoaded', () => {
             reportViewer.textContent = "Reporte Ejecutivo generado por DocIA.\nHaz clic en el botón inferior para descargar el archivo.";
         }
 
-        downloadBtn.href = report.url_descarga;
-        downloadBtn.removeAttribute('download');
+        const fullDownloadUrl = `${API_URL}${report.url_descarga}`;
+        downloadBtn.href = fullDownloadUrl;
+        downloadBtn.setAttribute('download', '');
         downloadBtn.onclick = (e) => {
             e.preventDefault();
-            window.location.href = report.url_descarga;
+            window.open(fullDownloadUrl, '_blank');
         };
 
         // Highlight selected recent item in sidebar
@@ -607,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let filtered = docs;
         if (query.trim()) {
             const q = query.toLowerCase();
-            filtered = docs.filter(d => 
+            filtered = docs.filter(d =>
                 (d.nombre && d.nombre.toLowerCase().includes(q)) ||
                 (d.fecha_subida && d.fecha_subida.toLowerCase().includes(q))
             );
@@ -813,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (fileInput) {
-        fileInput.addEventListener('change', function() {
+        fileInput.addEventListener('change', function () {
             handleFiles(this.files);
         });
     }
@@ -829,11 +830,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- File Processing ---
     function handleFiles(files) {
         if (files.length === 0) return;
-        
+
         const file = files[0];
         const validExtensions = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         const extension = file.name.split('.').pop().toLowerCase();
-        
+
         if (!validExtensions.includes(file.type) && !['txt', 'pdf', 'docx'].includes(extension)) {
             showError("Tipo de archivo no soportado. Usa .txt, .pdf o .docx");
             return;
@@ -857,7 +858,7 @@ document.addEventListener('DOMContentLoaded', () => {
             generateBtn.disabled = true;
             generateBtn.querySelector('span').textContent = "Generar Reporte Maestro";
         }
-        
+
         if (resultSection) resultSection.classList.add('hidden');
         if (resultContent) resultContent.classList.add('hidden');
         if (errorContainer) errorContainer.classList.add('hidden');
@@ -868,19 +869,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function extractTextFromFile(file) {
         const extension = file.name.split('.').pop().toLowerCase();
-        
+
         try {
             if (extension === 'txt') {
                 const text = await file.text();
                 finishExtraction(text);
-            } 
+            }
             else if (extension === 'pdf') {
                 if (!window.pdfjsLib) throw new Error("Librería PDF.js no cargada");
-                
+
                 const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 let fullText = "";
-                
+
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const content = await page.getTextContent();
@@ -891,9 +892,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             else if (extension === 'docx') {
                 if (!window.mammoth) throw new Error("Librería Mammoth no cargada");
-                
+
                 const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
                 finishExtraction(result.value);
             }
         } catch (error) {
@@ -920,9 +921,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (generateBtn) {
         generateBtn.addEventListener('click', async () => {
             if (!extractedText) return;
-            
+
             const formato = formatSelect.value;
-            
+
             resultSection.classList.remove('hidden');
             loader.classList.remove('hidden');
             resultContent.classList.add('hidden');
@@ -941,23 +942,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         formato: formato
                     })
                 });
-                
+
                 if (!response.ok) {
                     const rawText = await response.text();
                     let detail = "Error en el servidor";
                     try {
                         const errData = JSON.parse(rawText);
                         detail = errData.detail || detail;
-                    } catch(e) {}
-                    
+                    } catch (e) { }
+
                     if (response.status === 401 || (detail && detail.toLowerCase().includes("conectando con ollama"))) {
-                         throw new Error(`Error ${response.status}: Asegúrate de que Ollama esté iniciado en el puerto 11434. (${detail})`);
+                        throw new Error(`Error ${response.status}: Asegúrate de que Ollama esté iniciado en el puerto 11434. (${detail})`);
                     }
                     throw new Error(detail);
                 }
 
                 const data = await response.json();
-                
+
                 if (data.task_id) {
                     pollTaskStatus(data.task_id, formato);
                 }
@@ -972,18 +973,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function pollTaskStatus(taskId, formato) {
         if (pollingInterval) clearInterval(pollingInterval);
-        
+
         document.querySelector('.loader-text').textContent = "IA generando reporte ejecutivo (puede tardar unos momentos)...";
-        
+
         pollingInterval = setInterval(async () => {
             try {
                 const response = await fetch(`${API_URL}/api/v1/reportes/estado/${taskId}`, {
                     cache: 'no-store'
                 });
                 if (!response.ok) throw new Error("Error consultando estado de la tarea");
-                
+
                 const data = await response.json();
-                
+
                 if (data.status === "completed") {
                     clearInterval(pollingInterval);
                     loader.classList.add('hidden');
@@ -1007,17 +1008,17 @@ document.addEventListener('DOMContentLoaded', () => {
         resultContent.classList.remove('hidden');
         if (resultReportTitle) resultReportTitle.textContent = "Reporte Generado Exitosamente";
         if (resultReportDate) resultReportDate.textContent = `Formato: ${formato.toUpperCase()} • Recién generado`;
-        
+
         reportViewer.textContent = data.contenido_ia || "No se recibió contenido.";
-        
+
         if (data.ruta_archivo) {
             const fileName = data.ruta_archivo.split(/[/\\]/).pop();
-            const downloadUrl = `/api/v1/reportes/descargar/${fileName}`;
+            const downloadUrl = `${API_URL}/api/v1/reportes/descargar/${fileName}`;
             downloadBtn.href = downloadUrl;
-            downloadBtn.removeAttribute('download');
+            downloadBtn.setAttribute('download', '');
             downloadBtn.onclick = (e) => {
                 e.preventDefault();
-                window.location.href = downloadUrl;
+                window.open(downloadUrl, '_blank');
             };
         }
     }
@@ -1146,13 +1147,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             console.error("Error limpiando localStorage:", e);
         }
-        
+
         if (loginUserInput) loginUserInput.value = "";
         if (loginPassInput) loginPassInput.value = "";
         if (regNameInput) regNameInput.value = "";
         if (regUserInput) regUserInput.value = "";
         if (regPassInput) regPassInput.value = "";
-        
+
         mostrarLogin();
     }
 
@@ -1188,7 +1189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 let token = "demo-token-" + Date.now();
                 let userDisplayName = username;
-                
+
                 // Llamada al endpoint de autenticación en backend (si está disponible)
                 try {
                     const response = await fetch(`${API_URL}/api/v1/auth/login`, {
@@ -1196,7 +1197,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, password })
                     });
-                    
+
                     if (response.ok) {
                         const data = await response.json();
                         token = data.token || token;
