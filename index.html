@@ -479,53 +479,99 @@
 
                     <!-- Pestaña 2: Flujo de Generación de Reportes -->
                     <section id="sec-generator" class="tab-content hidden generator-wrapper">
-                        <div class="generator-header">
-                            <h2>Generador Inteligente de Reportes</h2>
-                            <p>Carga documentos extensos y obtén síntesis ejecutivas estructuradas con Ollama</p>
-                        </div>
-
-                        <div class="upload-section card-box">
-                            <div class="drag-drop-zone" id="dropZone">
-                                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                    xmlns="http://www.w3.org/2000/svg">
+                        <!-- Barra Superior de Inicio de Conversación Estilo DeepSeek / ChatGPT -->
+                        <div class="deepseek-header-wrap">
+                            <h2 class="deepseek-title">¿Por dónde deberíamos empezar?</h2>
+                            <div class="deepseek-search-pill">
+                                <svg class="deepseek-pill-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                    </path>
+                                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
                                 </svg>
-                                <h3>Arrastra y suelta tu archivo aquí</h3>
-                                <p>Soporta archivos .txt, .pdf y .docx</p>
-                                <input type="file" id="fileInput" accept=".txt,.pdf,.docx" hidden>
-                                <button class="btn-secondary" id="browseBtn">Seleccionar Archivo</button>
-                                <div id="fileInfo" class="file-info hidden">
-                                    <div class="file-info-badge">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                                            </path>
-                                        </svg>
-                                        <span id="fileName"></span>
-                                    </div>
-                                    <button id="removeFileBtn" class="btn-icon"
-                                        aria-label="Eliminar archivo">&times;</button>
-                                </div>
+                                <input type="text" id="deepseekPromptInput" class="deepseek-pill-input"
+                                    placeholder="Pregunta lo que quieras..." autocomplete="off">
+                                
+                                <button type="button" class="deepseek-think-btn" id="btnDeepThink" title="Razonamiento Profundo (Deep Think / IA)">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    <span>Pensar</span>
+                                </button>
+
+                                <button type="button" class="deepseek-pill-btn" id="btnFocusPrompt" title="Enviar instrucción" aria-label="Enviar instrucción">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
 
-                        <div class="config-section card-box">
-                            <h2>Configuración del Reporte</h2>
-                            <div class="form-group">
-                                <label for="formatSelect">Formato de Salida:</label>
-                                <div class="custom-select">
-                                    <select id="formatSelect">
-                                        <option value="pdf">Documento PDF (.pdf)</option>
-                                        <option value="docx">Documento Microsoft Word (.docx)</option>
-                                    </select>
+                        <!-- Zona de Trabajo Inferior: 2 Columnas Alineadas a la Par -->
+                        <div class="generator-grid-layout">
+                            <!-- Columna 1: Carga de Archivos -->
+                            <div class="upload-section card-box">
+                                <div class="drag-drop-zone" id="dropZone">
+                                    <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                        </path>
+                                    </svg>
+                                    <h3>Arrastra y suelta tu archivo aquí</h3>
+                                    <p>Soporta archivos .txt, .pdf y .docx</p>
+                                    <input type="file" id="fileInput" accept=".txt,.pdf,.docx" hidden>
+                                    <button class="btn-secondary" id="browseBtn">Seleccionar Archivo</button>
+                                    <div id="fileInfo" class="file-info hidden">
+                                        <div class="file-info-badge">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                                </path>
+                                            </svg>
+                                            <span id="fileName"></span>
+                                        </div>
+                                        <button id="removeFileBtn" class="btn-icon"
+                                            aria-label="Eliminar archivo">&times;</button>
+                                    </div>
                                 </div>
                             </div>
-                            <button class="btn-primary" id="generateBtn" disabled>
-                                <span>Generar Reporte Maestro</span>
-                                <div class="btn-glow"></div>
-                            </button>
+
+                            <!-- Columna 2: Configuración del Reporte Compacta -->
+                            <div class="config-section card-box">
+                                <h2>Configuración del Reporte</h2>
+
+                                <div class="form-group">
+                                    <label for="tipoContenidoSelect">Tipo de Contenido a Generar:</label>
+                                    <div class="custom-select">
+                                        <select id="tipoContenidoSelect">
+                                            <option value="reporte_maestro" selected>Reporte Maestro (Por defecto)</option>
+                                            <option value="resumen_ejecutivo">Resumen Ejecutivo</option>
+                                            <option value="presentacion">Presentación de Diapositivas</option>
+                                            <option value="cuestionario">Cuestionario (Q&A)</option>
+                                            <option value="puntos_clave">Puntos Clave y Conclusiones</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="formatSelect">Formato de Salida:</label>
+                                    <div class="custom-select">
+                                        <select id="formatSelect">
+                                            <option value="pdf" selected>Documento PDF (.pdf)</option>
+                                            <option value="docx">Documento Word (.docx)</option>
+                                            <option value="pptx">Presentación PowerPoint (.pptx)</option>
+                                            <option value="md">Documento Markdown (.md)</option>
+                                            <option value="txt">Texto Plano (.txt)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="config-btn-wrap">
+                                    <button class="btn-primary" id="generateBtn" disabled>
+                                        <span>Generar Documento</span>
+                                        <div class="btn-glow"></div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="result-section card-box hidden" id="resultSection">

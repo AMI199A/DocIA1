@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const topLiveStatus = document.getElementById('topLiveStatus');
 
     const dropZone = document.getElementById('dropZone');
+    const dropZonePrompt = document.getElementById('dropZonePrompt');
     const fileInput = document.getElementById('fileInput');
     const browseBtn = document.getElementById('browseBtn');
     const fileInfo = document.getElementById('fileInfo');
@@ -21,6 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const removeFileBtn = document.getElementById('removeFileBtn');
     const generateBtn = document.getElementById('generateBtn');
     const formatSelect = document.getElementById('formatSelect');
+    const tipoContenidoSelect = document.getElementById('tipoContenidoSelect');
+    const deepseekPromptInput = document.getElementById('deepseekPromptInput');
+    const btnDeepThink = document.getElementById('btnDeepThink');
+    const btnFocusPrompt = document.getElementById('btnFocusPrompt');
 
     const resultSection = document.getElementById('resultSection');
     const loader = document.getElementById('loader');
@@ -364,9 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        recentReportsList.innerHTML = filtered.map(item => `
+        recentReportsList.innerHTML = filtered.map(item => {
+            const fmt = (item.formato || '').toLowerCase();
+            const badgeClass = fmt === 'pdf' ? 'badge-pdf' : (fmt === 'docx' ? 'badge-docx' : (fmt === 'pptx' ? 'badge-pptx' : (fmt === 'md' ? 'badge-md' : 'badge-txt')));
+            return `
             <div class="recent-item" data-id="${item.id}" data-file="${item.archivo}">
-                <span class="recent-item-badge ${item.formato === 'pdf' ? 'badge-pdf' : 'badge-docx'}">${item.formato.toUpperCase()}</span>
+                <span class="recent-item-badge ${badgeClass}">${fmt.toUpperCase()}</span>
                 <div class="recent-item-info">
                     <span class="recent-item-title" title="${item.nombre}">${item.nombre}</span>
                     <span class="recent-item-date">${item.fecha} • ${item.tamano_kb} KB</span>
@@ -380,7 +388,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
 
         // Add Click Handler for each recent item to preview
         recentReportsList.querySelectorAll('.recent-item').forEach(el => {
@@ -443,24 +452,59 @@ document.addEventListener('DOMContentLoaded', () => {
         errorContainer.classList.add('hidden');
         resultContent.classList.remove('hidden');
 
-        if (resultReportTitle) resultReportTitle.textContent = report.nombre;
-        if (resultReportDate) resultReportDate.textContent = `${report.fecha} (${report.tamano_kb} KB)`;
+        const fmt = (report.formato || '').toLowerCase().replace('.', '');
+        const isPptx = (fmt === 'pptx');
+        const fullDownloadUrl = `${API_URL}${report.url_descarga}`;
+        const fileName = report.archivo || report.nombre || `documento.${fmt}`;
 
-        if (report.contenido) {
-            reportViewer.textContent = report.contenido;
-        } else if (report.preview) {
-            reportViewer.textContent = report.preview + "\n\n[Documento físico guardado en el servidor. Descárgalo abajo para ver el formato completo]";
-        } else {
-            reportViewer.textContent = "Reporte Ejecutivo generado por DocIA.\nHaz clic en el botón inferior para descargar el archivo.";
+        if (downloadBtn) {
+            downloadBtn.href = fullDownloadUrl;
+            downloadBtn.setAttribute('download', fileName);
+            downloadBtn.onclick = (e) => {
+                e.preventDefault();
+                window.open(fullDownloadUrl, '_blank');
+            };
         }
 
-        const fullDownloadUrl = `${API_URL}${report.url_descarga}`;
-        downloadBtn.href = fullDownloadUrl;
-        downloadBtn.setAttribute('download', '');
-        downloadBtn.onclick = (e) => {
-            e.preventDefault();
-            window.open(fullDownloadUrl, '_blank');
-        };
+        if (isPptx) {
+            if (resultReportTitle) resultReportTitle.textContent = "¡Presentación generada con éxito!";
+            if (resultReportDate) resultReportDate.textContent = `${report.fecha} • PPTX (${report.tamano_kb} KB)`;
+
+            reportViewer.innerHTML = `
+                <div class="binary-success-card">
+                    <div class="binary-icon-wrap">
+                        <svg class="binary-doc-icon pptx-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    </div>
+                    <div class="binary-info-wrap">
+                        <div class="binary-header-line">
+                            <span class="recent-item-badge badge-pptx">PPTX</span>
+                            <span class="binary-filename">${fileName}</span>
+                        </div>
+                        <h3 class="binary-card-title">¡Presentación de Diapositivas lista para descargar!</h3>
+                        <p class="binary-card-desc">${report.preview || "Archivo generado y almacenado en el servidor."}</p>
+                    </div>
+                    <div class="binary-action-box">
+                        <a href="${fullDownloadUrl}" class="btn-primary binary-download-direct-btn" download>
+                            <svg class="download-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span>Descargar PPTX (${report.tamano_kb} KB)</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+        } else {
+            if (resultReportTitle) resultReportTitle.textContent = report.nombre;
+            if (resultReportDate) resultReportDate.textContent = `${report.fecha} (${report.tamano_kb} KB)`;
+
+            if (report.contenido) {
+                reportViewer.textContent = report.contenido;
+            } else if (report.preview) {
+                reportViewer.textContent = report.preview;
+            } else {
+                reportViewer.textContent = "Reporte Ejecutivo generado por DocIA.\nHaz clic en el botón inferior para descargar el archivo.";
+            }
+        }
 
         // Highlight selected recent item in sidebar
         document.querySelectorAll('.recent-item').forEach(i => i.classList.remove('active'));
@@ -827,26 +871,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- File Processing ---
+    // --- File Handling & Forced Backend Extraction ---
+    const ALLOWED_EXTS = ['pdf', 'docx', 'doc', 'txt', 'md', 'rtf'];
+
     function handleFiles(files) {
-        if (files.length === 0) return;
+        if (!files || files.length === 0) return;
 
         const file = files[0];
-        const validExtensions = ['text/plain', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-        const extension = file.name.split('.').pop().toLowerCase();
+        const extension = (file.name.split('.').pop() || '').toLowerCase();
 
-        if (!validExtensions.includes(file.type) && !['txt', 'pdf', 'docx'].includes(extension)) {
-            showError("Tipo de archivo no soportado. Usa .txt, .pdf o .docx");
+        // Validación permisiva basada en extensión
+        if (extension && !ALLOWED_EXTS.includes(extension)) {
+            showError(`El archivo .${extension} no es compatible. Formatos admitidos: .pdf, .docx, .txt, .md`);
             return;
         }
 
         currentFile = file;
+        extractedText = "";
         fileName.textContent = file.name;
-        fileInfo.classList.remove('hidden');
-        generateBtn.disabled = true;
-        generateBtn.querySelector('span').textContent = "Procesando documento...";
+        if (fileInfo) fileInfo.classList.remove('hidden');
+        if (errorContainer) errorContainer.classList.add('hidden');
 
-        extractTextFromFile(file);
+        if (generateBtn) {
+            generateBtn.disabled = false;
+            generateBtn.querySelector('span').textContent = "Generar Documento";
+        }
     }
 
     function resetFile() {
@@ -854,9 +903,13 @@ document.addEventListener('DOMContentLoaded', () => {
         extractedText = "";
         if (fileInput) fileInput.value = "";
         if (fileInfo) fileInfo.classList.add('hidden');
+        if (deepseekPromptInput) deepseekPromptInput.value = "";
+        if (tipoContenidoSelect) tipoContenidoSelect.value = "reporte_maestro";
+        if (formatSelect) formatSelect.value = "pdf";
+
         if (generateBtn) {
             generateBtn.disabled = true;
-            generateBtn.querySelector('span').textContent = "Generar Reporte Maestro";
+            generateBtn.querySelector('span').textContent = "Generar Documento";
         }
 
         if (resultSection) resultSection.classList.add('hidden');
@@ -867,81 +920,89 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.recent-item').forEach(i => i.classList.remove('active'));
     }
 
-    async function extractTextFromFile(file) {
-        const extension = file.name.split('.').pop().toLowerCase();
+    // Extracción garantizada en Backend vía FastAPI y pypdf
+    async function extractTextFromBackend(file) {
+        const formData = new FormData();
+        formData.append('file', file);
 
-        try {
-            if (extension === 'txt') {
-                const text = await file.text();
-                finishExtraction(text);
-            }
-            else if (extension === 'pdf') {
-                if (!window.pdfjsLib) throw new Error("Librería PDF.js no cargada");
+        const response = await fetch(`${API_URL}/api/v1/extraer-texto`, {
+            method: 'POST',
+            body: formData
+        });
 
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                let fullText = "";
-
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    const strings = content.items.map(item => item.str);
-                    fullText += strings.join(" ") + "\n";
-                }
-                finishExtraction(fullText);
-            }
-            else if (extension === 'docx') {
-                if (!window.mammoth) throw new Error("Librería Mammoth no cargada");
-
-                const arrayBuffer = await file.arrayBuffer();
-                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-                finishExtraction(result.value);
-            }
-        } catch (error) {
-            console.error("Error extrayendo texto:", error);
-            showError("No se pudo extraer el texto del archivo: " + error.message);
-            resetFile();
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.detail || "Error extrayendo texto del documento en el servidor.");
         }
-    }
 
-    function finishExtraction(text) {
-        if (!text.trim()) {
-            showError("El archivo parece estar vacío o no contiene texto extraíble.");
-            resetFile();
-            return;
-        }
-        extractedText = text;
-        generateBtn.disabled = false;
-        generateBtn.querySelector('span').textContent = "Generar Reporte Maestro";
+        const data = await response.json();
+        return data.texto || "";
     }
 
     // --- Report Generation Flow ---
     let pollingInterval = null;
 
+    // --- Deep Think Button Toggle ---
+    if (btnDeepThink) {
+        btnDeepThink.addEventListener('click', (e) => {
+            e.preventDefault();
+            btnDeepThink.classList.toggle('active');
+        });
+    }
+
     if (generateBtn) {
         generateBtn.addEventListener('click', async () => {
-            if (!extractedText) return;
-
-            const formato = formatSelect.value;
+            if (!currentFile && !extractedText) {
+                showError("Por favor, sube o arrastra un archivo (.pdf, .docx o .txt) antes de generar el documento.");
+                if (browseBtn) browseBtn.click();
+                return;
+            }
 
             resultSection.classList.remove('hidden');
             loader.classList.remove('hidden');
             resultContent.classList.add('hidden');
             errorContainer.classList.add('hidden');
             generateBtn.disabled = true;
+
+            const formato = formatSelect ? formatSelect.value : "pdf";
+            const tipoContenido = tipoContenidoSelect ? tipoContenidoSelect.value : "reporte_maestro";
+            let promptPersonalizado = deepseekPromptInput ? deepseekPromptInput.value.trim() : "";
+
+            if (btnDeepThink && btnDeepThink.classList.contains('active')) {
+                const razonamientoHint = "[MODO PENSAR / DEEP THINK ACTIVADO: Desarrolla un análisis exhaustivo, riguroso y estructurado paso a paso]";
+                promptPersonalizado = promptPersonalizado ? `${razonamientoHint}\n${promptPersonalizado}` : razonamientoHint;
+            }
+
             document.querySelector('.loader-text').textContent = "Iniciando proceso con Ollama...";
 
             try {
-                const response = await fetch(`${API_URL}/api/v1/reportes/generar`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        texto: extractedText,
-                        formato: formato
-                    })
-                });
+                let response;
+
+                if (currentFile) {
+                    const formData = new FormData();
+                    formData.append('file', currentFile);
+                    formData.append('formato', formato);
+                    formData.append('tipo_contenido', tipoContenido);
+                    formData.append('prompt_personalizado', promptPersonalizado);
+
+                    response = await fetch(`${API_URL}/api/v1/reportes/generar`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    response = await fetch(`${API_URL}/api/v1/reportes/generar`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            texto: extractedText,
+                            formato: formato,
+                            tipo_contenido: tipoContenido,
+                            prompt_personalizado: promptPersonalizado
+                        })
+                    });
+                }
 
                 if (!response.ok) {
                     const rawText = await response.text();
@@ -967,6 +1028,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 showError(error.message);
                 loader.classList.add('hidden');
                 generateBtn.disabled = false;
+            }
+        });
+    }
+
+    // Enter key & Button handler for DeepSeek Prompt Input
+    function handlePromptSubmit() {
+        if (extractedText && generateBtn) {
+            generateBtn.click();
+        } else {
+            showError("Por favor, sube o arrastra un archivo (.txt, .pdf o .docx) antes de generar el documento.");
+            if (browseBtn) browseBtn.click();
+        }
+    }
+
+    if (btnFocusPrompt) {
+        btnFocusPrompt.addEventListener('click', (e) => {
+            e.preventDefault();
+            handlePromptSubmit();
+        });
+    }
+
+    if (deepseekPromptInput) {
+        deepseekPromptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handlePromptSubmit();
             }
         });
     }
@@ -1005,21 +1092,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showResult(data, formato) {
+        const fmt = (formato || data.formato || 'pdf').toLowerCase().replace('.', '');
         resultContent.classList.remove('hidden');
-        if (resultReportTitle) resultReportTitle.textContent = "Reporte Generado Exitosamente";
-        if (resultReportDate) resultReportDate.textContent = `Formato: ${formato.toUpperCase()} • Recién generado`;
 
-        reportViewer.textContent = data.contenido_ia || "No se recibió contenido.";
+        const fileName = data.ruta_archivo ? data.ruta_archivo.split(/[/\\]/).pop() : `documento.${fmt}`;
+        const downloadUrl = `${API_URL}/api/v1/reportes/descargar/${fileName}`;
 
-        if (data.ruta_archivo) {
-            const fileName = data.ruta_archivo.split(/[/\\]/).pop();
-            const downloadUrl = `${API_URL}/api/v1/reportes/descargar/${fileName}`;
+        if (downloadBtn) {
             downloadBtn.href = downloadUrl;
-            downloadBtn.setAttribute('download', '');
+            downloadBtn.setAttribute('download', fileName);
             downloadBtn.onclick = (e) => {
                 e.preventDefault();
                 window.open(downloadUrl, '_blank');
             };
+        }
+
+        if (fmt === 'pptx') {
+            if (resultReportTitle) resultReportTitle.textContent = "¡Presentación generada con éxito!";
+            if (resultReportDate) resultReportDate.textContent = `Formato: PPTX • Listo para descargar`;
+
+            reportViewer.innerHTML = `
+                <div class="binary-success-card">
+                    <div class="binary-icon-wrap">
+                        <svg class="binary-doc-icon pptx-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    </div>
+                    <div class="binary-info-wrap">
+                        <div class="binary-header-line">
+                            <span class="recent-item-badge badge-pptx">PPTX</span>
+                            <span class="binary-filename">${fileName}</span>
+                        </div>
+                        <h3 class="binary-card-title">¡Presentación de Diapositivas generada con éxito!</h3>
+                        <p class="binary-card-desc">El archivo de presentación ha sido procesado y compilado por la IA. Puedes descargarlo directamente para abrirlo en PowerPoint o Google Slides.</p>
+                    </div>
+                    <div class="binary-action-box">
+                        <a href="${downloadUrl}" class="btn-primary binary-download-direct-btn" download>
+                            <svg class="download-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span>Descargar Presentación (.pptx)</span>
+                        </a>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Formatos legibles con previsualización completa en pantalla (docx, pdf, md, txt)
+            if (resultReportTitle) resultReportTitle.textContent = "Reporte Generado Exitosamente";
+            if (resultReportDate) resultReportDate.textContent = `Formato: ${fmt.toUpperCase()} • Recién generado`;
+            reportViewer.textContent = data.contenido_ia || "No se recibió contenido.";
         }
     }
 

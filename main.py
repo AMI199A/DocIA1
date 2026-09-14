@@ -2,13 +2,25 @@ import uuid
 import os
 import time
 from datetime import datetime
-from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, HTTPException, BackgroundTasks, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from services.ollama_service import generar_resumen
-from services.file_generator import crear_pdf, crear_docx
+from services.file_generator import (
+    generar_archivo_salida,
+    crear_pdf,
+    crear_docx,
+    crear_pptx,
+    crear_md,
+    crear_txt
+)
+from services.file_extractor import (
+    extraer_texto_de_archivo,
+    ALLOWED_EXTENSIONS,
+    ALLOWED_MIME_TYPES
+)
 
 app = FastAPI(title="DocIA API", version="1.0.0")
 
@@ -28,7 +40,9 @@ app.add_middleware(
 
 class DocumentRequest(BaseModel):
     texto: str
-    formato: str = "pdf" # Puede ser "pdf" o "docx"
+    formato: str = "pdf" # "pdf", "docx", "pptx", "md", "txt"
+    tipo_contenido: str = "reporte_maestro"
+    prompt_personalizado: str = ""
 
 class LoginRequest(BaseModel):
     username: str
@@ -109,11 +123,21 @@ def login(req: LoginRequest):
 tasks_db = {}
 completed_durations = []
 
-async def process_report(task_id: str, texto: str, formato: str):
+async def process_report(
+    task_id: str,
+    texto: str,
+    formato: str = "pdf",
+    tipo_contenido: str = "reporte_maestro",
+    prompt_personalizado: str = ""
+):
     start_time = time.time()
     try:
         # 1. Llamar a Ollama para procesar el texto (asíncrono)
-        resumen_ejecutivo = await generar_resumen(texto)
+        resumen_ejecutivo = await generar_resumen(
+            texto_contexto=texto,
+            tipo_contenido=tipo_contenido,
+            prompt_personalizado=prompt_personalizado
+        )
         elapsed = round(time.time() - start_time, 2)
         
         if "Error conectando" in resumen_ejecutivo:
@@ -125,15 +149,12 @@ async def process_report(task_id: str, texto: str, formato: str):
             }
             return
             
-        # 2. Generar archivo físico
-        nombre_base = f"reporte_ejecutivo_{task_id}"
-        if formato.lower() == "pdf":
-            ruta_archivo = crear_pdf(resumen_ejecutivo, nombre_base)
-        elif formato.lower() == "docx":
-            ruta_archivo = crear_docx(resumen_ejecutivo, nombre_base)
-        else:
-            tasks_db[task_id] = {"status": "error", "detail": "Formato no soportado."}
-            return
+        # 2. Generar archivo físico con soporte multiformato
+        fmt_clean = formato.lower().strip().replace(".", "")
+        tipo_clean = tipo_contenido.lower().strip()
+        nombre_base = f"docia_{tipo_clean}_{task_id}"
+        
+        ruta_archivo = generar_archivo_salida(resumen_ejecutivo, fmt_clean, nombre_base)
             
         completed_durations.append(elapsed)
         preview_text = resumen_ejecutivo.strip()[:160].replace("\n", " ") + "..."
@@ -145,7 +166,8 @@ async def process_report(task_id: str, texto: str, formato: str):
             "ruta_archivo": ruta_archivo,
             "duration": elapsed,
             "timestamp": time.time(),
-            "formato": formato.lower(),
+            "formato": fmt_clean,
+            "tipo_contenido": tipo_clean,
             "preview": preview_text,
             "task_id": task_id
         }
@@ -156,11 +178,82 @@ async def process_report(task_id: str, texto: str, formato: str):
         tasks_db[task_id] = {"status": "error", "detail": str(e), "timestamp": time.time()}
 
 @app.post("/api/v1/reportes/generar")
-async def generar_reporte(req: DocumentRequest, background_tasks: BackgroundTasks):
+async def generar_reporte(request: Request, background_tasks: BackgroundTasks):
+    content_type = request.headers.get("content-type", "")
+    texto = ""
+    formato = "pdf"
+    tipo_contenido = "reporte_maestro"
+    prompt_personalizado = ""
+    
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        file = form.get("file")
+        formato = str(form.get("formato", "pdf"))
+        tipo_contenido = str(form.get("tipo_contenido", "reporte_maestro"))
+        prompt_personalizado = str(form.get("prompt_personalizado", ""))
+        texto = str(form.get("texto", ""))
+        
+        if file and hasattr(file, "read"):
+            filename = getattr(file, "filename", "documento")
+            content = await file.read()
+            if content:
+                texto = extraer_texto_de_archivo(content, filename, getattr(file, "content_type", "") or "")
+                
+        if not texto or not texto.strip():
+            raise HTTPException(status_code=400, detail="No se pudo extraer texto legible del archivo.")
+    else:
+        try:
+            body = await request.json()
+            texto = body.get("texto", "")
+            formato = body.get("formato", "pdf")
+            tipo_contenido = body.get("tipo_contenido", "reporte_maestro")
+            prompt_personalizado = body.get("prompt_personalizado", "")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Cuerpo de petición JSON inválido.")
+            
+        if not texto or not texto.strip():
+            raise HTTPException(status_code=400, detail="El campo 'texto' es requerido.")
+
     task_id = uuid.uuid4().hex[:12]
     tasks_db[task_id] = {"status": "processing", "timestamp": time.time()}
-    background_tasks.add_task(process_report, task_id, req.texto, req.formato)
-    return {"task_id": task_id, "status": "processing", "message": "Reporte en generación"}
+    background_tasks.add_task(
+        process_report,
+        task_id,
+        texto,
+        formato,
+        tipo_contenido,
+        prompt_personalizado
+    )
+    return {"task_id": task_id, "status": "processing", "message": "Documento en generación"}
+
+@app.post("/api/v1/extraer-texto")
+@app.post("/api/v1/extraer_texto")
+async def extraer_texto_endpoint(file: UploadFile = File(...)):
+    try:
+        filename = file.filename or "documento"
+        ext = filename.split(".")[-1].lower() if "." in filename else ""
+        
+        if ext and ext not in ALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Formato no soportado (.{ext}). Los formatos permitidos son: .pdf, .docx, .txt"
+            )
+            
+        content = await file.read()
+        if not content:
+            raise HTTPException(status_code=400, detail="El archivo recibido está vacío.")
+            
+        texto_extraido = extraer_texto_de_archivo(content, filename, file.content_type or "")
+        return {
+            "status": "success",
+            "filename": filename,
+            "caracteres": len(texto_extraido),
+            "texto": texto_extraido
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al procesar el archivo: {str(e)}")
 
 @app.get("/api/v1/reportes/estado/{task_id}")
 def obtener_estado_reporte(task_id: str):
@@ -176,19 +269,20 @@ async def health_check():
 def obtener_reportes_recientes():
     recientes = []
     directorio = "archivos_generados"
+    extensiones_validas = (".pdf", ".docx", ".pptx", ".md", ".txt")
     
     if os.path.exists(directorio):
-        archivos = [f for f in os.listdir(directorio) if f.endswith((".pdf", ".docx"))]
+        archivos = [f for f in os.listdir(directorio) if f.lower().endswith(extensiones_validas)]
         
         for arch in archivos:
             ruta = os.path.join(directorio, arch)
             mtime = os.path.getmtime(ruta)
             size_kb = round(os.path.getsize(ruta) / 1024, 1)
-            ext = "pdf" if arch.endswith(".pdf") else "docx"
+            ext = arch.split(".")[-1].lower()
             dt = datetime.fromtimestamp(mtime)
             
             # Buscar en tasks_db si tenemos el contenido o preview
-            preview = "Reporte Ejecutivo generado por DocIA con IA y RAG."
+            preview = "Documento generado por DocIA con IA y RAG."
             contenido = ""
             for tid, tdata in tasks_db.items():
                 if tdata.get("ruta_archivo") and arch in tdata.get("ruta_archivo", ""):
@@ -197,10 +291,10 @@ def obtener_reportes_recientes():
                     break
             
             # Formato de nombre amigable
-            clean_id = arch.replace("reporte_ejecutivo_", "").replace(f".{ext}", "")[:8]
+            clean_id = arch.replace("docia_", "").replace("reporte_ejecutivo_", "").replace(f".{ext}", "")[:10]
             recientes.append({
                 "id": clean_id,
-                "nombre": f"Reporte {ext.upper()} - {dt.strftime('%d/%m %H:%M')}",
+                "nombre": f"Doc {ext.upper()} - {dt.strftime('%d/%m %H:%M')}",
                 "archivo": arch,
                 "fecha": dt.strftime("%d %b, %H:%M"),
                 "timestamp": mtime,
@@ -220,10 +314,11 @@ def obtener_metricas_dashboard():
     archivos = []
     file_timestamps = []
     total_bytes = 0
+    extensiones_validas = (".pdf", ".docx", ".pptx", ".md", ".txt")
     
     if os.path.exists(directorio):
         for f in os.listdir(directorio):
-            if f.endswith((".pdf", ".docx")):
+            if f.lower().endswith(extensiones_validas):
                 archivos.append(f)
                 ruta = os.path.join(directorio, f)
                 try:
@@ -281,7 +376,7 @@ def obtener_metricas_dashboard():
     return {
         "reportes_generados": total_reportes,
         "documentos_rag": total_documentos_rag,
-        "plantillas_activas": 2, # PDF y DOCX
+        "plantillas_activas": 5, # PDF, DOCX, PPTX, MD, TXT
         "velocidad_promedio": vel_prom,
         "actividad_semanal": {
             "dias": dias_nombres,
@@ -298,18 +393,24 @@ def obtener_metricas_dashboard():
 async def descargar_reporte(file_name: str):
     file_path = os.path.join(DIR_ARCHIVOS, file_name)
     if os.path.exists(file_path):
-        # Determinar media_type correcto para que el navegador pueda abrir el archivo
+        # Determinar media_type correcto según formato
         if file_name.endswith(".pdf"):
             media = "application/pdf"
         elif file_name.endswith(".docx"):
             media = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        elif file_name.endswith(".pptx"):
+            media = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        elif file_name.endswith(".md"):
+            media = "text/markdown; charset=utf-8"
+        elif file_name.endswith(".txt"):
+            media = "text/plain; charset=utf-8"
         else:
             media = "application/octet-stream"
         return FileResponse(
             path=file_path,
             filename=file_name,
             media_type=media,
-            headers={"Content-Disposition": f'inline; filename="{file_name}"'}
+            headers={"Content-Disposition": f'attachment; filename="{file_name}"'}
         )
     raise HTTPException(status_code=404, detail="Archivo no encontrado")
 
