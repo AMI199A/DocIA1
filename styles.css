@@ -1648,16 +1648,114 @@ button {
 
 .report-viewer {
     background: #f8fafc;
-    padding: 1.75rem;
+    padding: 1.85rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--border-color);
     margin-bottom: 1.5rem;
-    white-space: pre-wrap;
-    font-size: 0.92rem;
-    line-height: 1.7;
-    color: var(--text-body);
-    max-height: 420px;
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: #1e293b;
+    max-height: 480px;
     overflow-y: auto;
+    word-break: break-word;
+}
+
+.report-viewer h1,
+.report-viewer h2,
+.report-viewer h3,
+.report-viewer h4 {
+    color: #0f172a !important;
+    font-weight: 800;
+    margin-top: 1.35rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.35;
+    letter-spacing: -0.015em;
+    text-shadow: none !important;
+}
+
+.report-viewer h1:first-child,
+.report-viewer h2:first-child,
+.report-viewer h3:first-child {
+    margin-top: 0;
+}
+
+.report-viewer h1 {
+    font-size: 1.35rem;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.45rem;
+}
+
+.report-viewer h2 {
+    font-size: 1.2rem;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.35rem;
+}
+
+.report-viewer h3 {
+    font-size: 1.05rem;
+}
+
+.report-viewer h4 {
+    font-size: 0.95rem;
+}
+
+.report-viewer p {
+    color: #334155 !important;
+    margin-bottom: 0.85rem;
+    line-height: 1.75;
+    text-shadow: none !important;
+}
+
+.report-viewer strong {
+    color: #0f172a !important;
+    font-weight: 700;
+}
+
+.report-viewer ul,
+.report-viewer ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+    color: #334155 !important;
+}
+
+.report-viewer li {
+    margin-bottom: 0.45rem;
+    line-height: 1.65;
+}
+
+.report-viewer blockquote {
+    border-left: 4px solid var(--primary);
+    padding: 0.6rem 1rem;
+    background: #eff6ff;
+    color: #1e40af;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
+}
+
+.report-viewer hr {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 1.5rem 0;
+}
+
+.report-viewer table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.25rem 0;
+    font-size: 0.88rem;
+}
+
+.report-viewer th,
+.report-viewer td {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #e2e8f0;
+    text-align: left;
+}
+
+.report-viewer th {
+    background: #f1f5f9;
+    font-weight: 700;
+    color: #0f172a;
 }
 
 /* Binary Document Success Card (PPTX / DOCX) */

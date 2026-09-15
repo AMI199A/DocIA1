@@ -8,6 +8,14 @@ load_dotenv()
 OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 MODELO = os.getenv("OLLAMA_MODEL", "phi3")
 
+STRICT_ANTI_LOOP_RULE = (
+    "\n\nREGLA ESTRICTA DE GENERACIÓN:\n"
+    "- Responde EXCLUSIVAMENTE con la estructura del reporte solicitado.\n"
+    "- Queda estrictamente PROHIBIDO repetir títulos, caer en bucles de texto o inventar variaciones de nombres (ej. 'María Gavilotas').\n"
+    "- Mantén estricta fidelidad, coherencia y profesionalismo con los datos del documento proporcionado.\n"
+    "- Formatea la respuesta con Markdown claro y estructurado (encabezados ##, listas y negritas).\n\n"
+)
+
 PROMPT_TEMPLATES = {
     "reporte_maestro": (
         "Actúa como un consultor y analista experto. Analiza minuciosamente el siguiente documento y "
@@ -17,33 +25,33 @@ PROMPT_TEMPLATES = {
         "2. ANÁLISIS DETALLADO Y HALLAZGOS\n"
         "3. PUNTOS CLAVE Y MÉTRICAS\n"
         "4. RIESGOS Y OPORTUNIDADES\n"
-        "5. CONCLUSIONES Y RECOMENDACIONES ESTRATÉGICAS\n\n"
-    ),
+        "5. CONCLUSIONES Y RECOMENDACIONES ESTRATÉGICAS\n"
+    ) + STRICT_ANTI_LOOP_RULE,
     "resumen_ejecutivo": (
         "Actúa como un redactor ejecutivo de alto nivel. Analiza el siguiente documento y escribe un "
         "RESUMEN EJECUTIVO conciso, profesional y directo al grano en español. Destaca los antecedentes, "
-        "puntos esenciales, decisiones clave y conclusiones sin redundancias.\n\n"
-    ),
+        "puntos esenciales, decisiones clave y conclusiones sin redundancias.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
     "presentacion": (
         "Actúa como un diseñador de presentaciones y consultor estratégico. Con base en el siguiente documento, "
         "elabora el contenido estructurado para una PRESENTACIÓN DE DIAPOSITIVAS en español.\n"
         "Organiza el contenido claramente por diapositivas (ej. [Diapositiva 1: Título], [Diapositiva 2: Objetivos], "
-        "etc.), con encabezados impactantes y viñetas concisas con la información clave.\n\n"
-    ),
+        "etc.), con encabezados impactantes y viñetas concisas con la información clave.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
     "cuestionario": (
         "Actúa como un especialista en evaluación y preguntas de comprensión. Analiza el siguiente documento "
         "y genera un CUESTIONARIO / BANCO DE PREGUNTAS Y RESPUESTAS (Q&A) en español. "
-        "Incluye preguntas clave de análisis y síntesis con sus respuestas precisas y fundamentadas en el texto.\n\n"
-    ),
+        "Incluye preguntas clave de análisis y síntesis con sus respuestas precisas y fundamentadas en el texto.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
     "puntos_clave": (
         "Actúa como un sintetizador de información estratégica. Analiza el siguiente documento y extrae los "
         "PUNTOS CLAVE, IDEAS FUERZA Y CONCLUSIONES en español, organizados con viñetas claras y breves "
-        "explicaciones de alto impacto.\n\n"
-    ),
+        "explicaciones de alto impacto.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
     "modo_libre": (
         "Analiza el siguiente documento y procesa la información de forma profesional en español según "
-        "las directrices especificadas.\n\n"
-    )
+        "las directrices especificadas.\n"
+    ) + STRICT_ANTI_LOOP_RULE
 }
 
 async def generar_resumen(
@@ -62,7 +70,7 @@ async def generar_resumen(
     if prompt_personalizado and prompt_personalizado.strip():
         prompt_parts.append(f"INSTRUCCIÓN / REQUERIMIENTO ESPECÍFICO DEL USUARIO:\n{prompt_personalizado.strip()}\n\n")
         
-    prompt_parts.append(f"DOCUMENTO A PROCESAR:\n{texto_contexto[:3500]}")
+    prompt_parts.append(f"DOCUMENTO A PROCESAR:\n{texto_contexto[:4000]}")
     
     prompt_final = "".join(prompt_parts)
     
@@ -71,9 +79,11 @@ async def generar_resumen(
         "prompt": prompt_final,
         "stream": False,
         "options": {
-            "num_predict": 800,
-            "temperature": 0.5,
-            "repeat_penalty": 1.2
+            "temperature": 0.2,
+            "repeat_penalty": 1.2,
+            "top_p": 0.9,
+            "repeat_last_n": 64,
+            "num_predict": 1200
         }
     }
     

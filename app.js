@@ -499,12 +499,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (resultReportTitle) resultReportTitle.textContent = report.nombre;
             if (resultReportDate) resultReportDate.textContent = `${report.fecha} (${report.tamano_kb} KB)`;
 
-            if (report.contenido) {
-                reportViewer.textContent = report.contenido;
-            } else if (report.preview) {
-                reportViewer.textContent = report.preview;
+            const rawContent = report.contenido || report.preview || "Reporte Ejecutivo generado por DocIA.\nHaz clic en el botón inferior para descargar el archivo.";
+            if (window.marked && typeof marked.parse === 'function') {
+                reportViewer.innerHTML = marked.parse(rawContent);
             } else {
-                reportViewer.textContent = "Reporte Ejecutivo generado por DocIA.\nHaz clic en el botón inferior para descargar el archivo.";
+                reportViewer.textContent = rawContent;
             }
         }
 
@@ -1140,7 +1139,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Formatos legibles con previsualización completa en pantalla (docx, pdf, md, txt)
             if (resultReportTitle) resultReportTitle.textContent = "Reporte Generado Exitosamente";
             if (resultReportDate) resultReportDate.textContent = `Formato: ${fmt.toUpperCase()} • Recién generado`;
-            reportViewer.textContent = data.contenido_ia || "No se recibió contenido.";
+            const rawContent = data.contenido_ia || "No se recibió contenido.";
+            if (window.marked && typeof marked.parse === 'function') {
+                reportViewer.innerHTML = marked.parse(rawContent);
+            } else {
+                reportViewer.textContent = rawContent;
+            }
         }
     }
 
