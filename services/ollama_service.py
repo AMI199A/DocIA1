@@ -77,11 +77,22 @@ async def generar_resumen(
         }
     }
     
+    # Configuración de timeout extendido para inferencias largas en CPUs/GPUs
+    timeout_config = httpx.Timeout(300.0, connect=60.0, read=300.0, write=60.0)
+    
     try:
-        async with httpx.AsyncClient(timeout=300.0) as client:
-            response = await client.post(url, json=payload)
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
+            response = await client.post(url, json=payload, timeout=timeout_config)
             response.raise_for_status()
             return response.json().get("response", "No se generó respuesta.")
+    except httpx.ReadTimeout:
+        error_details = traceback.format_exc()
+        print(f"TIMEOUT EN OLLAMA SERVICE:\n{error_details}")
+        return "Error de tiempo de espera: Ollama tardó más de lo esperado en procesar el documento. Intenta con un texto más breve o verifica los recursos del sistema."
+    except httpx.ConnectError:
+        error_details = traceback.format_exc()
+        print(f"ERROR DE CONEXIÓN OLLAMA:\n{error_details}")
+        return f"Error de conexión con Ollama en {OLLAMA_URL}. Asegúrate de que el comando 'ollama serve' esté activo."
     except Exception as e:
         error_details = traceback.format_exc()
         print(f"ERROR EN OLLAMA SERVICE:\n{error_details}")

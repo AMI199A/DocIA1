@@ -140,7 +140,7 @@ async def process_report(
         )
         elapsed = round(time.time() - start_time, 2)
         
-        if "Error conectando" in resumen_ejecutivo:
+        if resumen_ejecutivo.startswith("Error"):
             tasks_db[task_id] = {
                 "status": "error",
                 "detail": resumen_ejecutivo,
