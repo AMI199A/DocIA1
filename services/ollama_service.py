@@ -77,8 +77,8 @@ async def generar_resumen(
         }
     }
     
-    # Configuración de timeout extendido para inferencias largas en CPUs/GPUs
-    timeout_config = httpx.Timeout(300.0, connect=60.0, read=300.0, write=60.0)
+    # Configuración sin límite de tiempo para lectura (timeout infinito para inferencias complejas)
+    timeout_config = httpx.Timeout(timeout=None, connect=60.0)
     
     try:
         async with httpx.AsyncClient(timeout=timeout_config) as client:
