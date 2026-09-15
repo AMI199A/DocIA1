@@ -235,15 +235,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function initCharts() {
         if (typeof Chart === 'undefined') return;
 
-        Chart.defaults.color = '#a1a1aa';
+        Chart.defaults.color = '#64748b';
         Chart.defaults.font.family = "'Inter', sans-serif";
 
         const ctxActividad = document.getElementById('actividadChart');
         if (ctxActividad && !actividadChartInstance) {
             const actCtx = ctxActividad.getContext('2d');
             const bgGradient = actCtx.createLinearGradient(0, 0, 0, 180);
-            bgGradient.addColorStop(0, 'rgba(16, 185, 129, 0.9)');
-            bgGradient.addColorStop(1, 'rgba(16, 185, 129, 0.25)');
+            bgGradient.addColorStop(0, '#1a6bff');
+            bgGradient.addColorStop(1, '#60a5fa');
 
             actividadChartInstance = new Chart(actCtx, {
                 type: 'bar',
@@ -263,23 +263,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#18181b',
-                            titleColor: '#f4f4f5',
-                            bodyColor: '#a1a1aa',
-                            borderColor: '#27272a',
+                            backgroundColor: '#0f172a',
+                            titleColor: '#ffffff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
                             borderWidth: 1,
                             padding: 10,
-                            displayColors: false
+                            displayColors: false,
+                            cornerRadius: 8
                         }
                     },
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { font: { size: 11 }, color: '#71717a' }
+                            ticks: { font: { size: 11, weight: '500' }, color: '#64748b' }
                         },
                         y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                            ticks: { stepSize: 1, font: { size: 11 }, color: '#71717a' }
+                            grid: { color: 'rgba(15, 23, 42, 0.06)' },
+                            ticks: { stepSize: 1, font: { size: 11 }, color: '#64748b' }
                         }
                     }
                 }
@@ -290,8 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctxTendencia && !tendenciaChartInstance) {
             const tenCtx = ctxTendencia.getContext('2d');
             const lineGradient = tenCtx.createLinearGradient(0, 0, 0, 180);
-            lineGradient.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
-            lineGradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+            lineGradient.addColorStop(0, 'rgba(26, 107, 255, 0.22)');
+            lineGradient.addColorStop(1, 'rgba(26, 107, 255, 0.01)');
 
             tendenciaChartInstance = new Chart(tenCtx, {
                 type: 'line',
@@ -300,13 +301,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     datasets: [{
                         label: 'Tokens procesados',
                         data: [1200, 2400, 1800, 3200, 2900, 3500],
-                        borderColor: '#10b981',
+                        borderColor: '#1a6bff',
                         backgroundColor: lineGradient,
                         fill: true,
                         tension: 0.4,
-                        borderWidth: 2,
-                        pointBackgroundColor: '#34d399',
-                        pointBorderColor: '#09090b',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#ffffff',
                         pointBorderWidth: 2,
                         pointRadius: 4,
                         pointHoverRadius: 6
@@ -318,23 +319,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            backgroundColor: '#18181b',
-                            titleColor: '#f4f4f5',
-                            bodyColor: '#a1a1aa',
-                            borderColor: '#27272a',
+                            backgroundColor: '#0f172a',
+                            titleColor: '#ffffff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: '#334155',
                             borderWidth: 1,
                             padding: 10,
-                            displayColors: false
+                            displayColors: false,
+                            cornerRadius: 8
                         }
                     },
                     scales: {
                         x: {
                             grid: { display: false },
-                            ticks: { font: { size: 11 }, color: '#71717a' }
+                            ticks: { font: { size: 11, weight: '500' }, color: '#64748b' }
                         },
                         y: {
-                            grid: { color: 'rgba(255, 255, 255, 0.04)' },
-                            ticks: { font: { size: 11 }, color: '#71717a' }
+                            grid: { color: 'rgba(15, 23, 42, 0.06)' },
+                            ticks: { font: { size: 11 }, color: '#64748b' }
                         }
                     }
                 }
