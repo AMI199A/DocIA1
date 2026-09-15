@@ -70,7 +70,7 @@ async def generar_resumen(
     if prompt_personalizado and prompt_personalizado.strip():
         prompt_parts.append(f"INSTRUCCIÓN / REQUERIMIENTO ESPECÍFICO DEL USUARIO:\n{prompt_personalizado.strip()}\n\n")
         
-    prompt_parts.append(f"DOCUMENTO A PROCESAR:\n{texto_contexto[:4000]}")
+    prompt_parts.append(f"DOCUMENTO A PROCESAR:\n{texto_contexto[:3500]}")
     
     prompt_final = "".join(prompt_parts)
     
@@ -79,11 +79,13 @@ async def generar_resumen(
         "prompt": prompt_final,
         "stream": False,
         "options": {
-            "temperature": 0.2,
-            "repeat_penalty": 1.2,
-            "top_p": 0.9,
-            "repeat_last_n": 64,
-            "num_predict": 1200
+            "temperature": 0.1,
+            "top_k": 20,
+            "top_p": 0.8,
+            "repeat_penalty": 1.15,
+            "num_predict": 450,
+            "num_ctx": 2048,
+            "num_thread": 4
         }
     }
     
