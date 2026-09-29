@@ -1460,6 +1460,236 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ============================================================
+    // MÓDULO CHAT IA INTERACTIVO (Q&A)
+    // ============================================================
+    const chatDocSelect = document.getElementById('chatDocSelect');
+    const btnClearChat = document.getElementById('btnClearChat');
+    const chatMessagesBox = document.getElementById('chatMessagesBox');
+    const chatInputForm = document.getElementById('chatInputForm');
+    const chatMessageInput = document.getElementById('chatMessageInput');
+    const btnSendChat = document.getElementById('btnSendChat');
+
+    function actualizarSelectDocumentosChat(docs) {
+        if (!chatDocSelect) return;
+        const currentVal = chatDocSelect.value;
+        chatDocSelect.innerHTML = `<option value="">Conversación General (Sin documento)</option>`;
+        if (Array.isArray(docs)) {
+            docs.forEach(doc => {
+                const opt = document.createElement('option');
+                opt.value = doc.nombre || doc.id || "";
+                opt.textContent = `📄 ${doc.nombre} (${doc.tamano || doc.formato || 'doc'})`;
+                chatDocSelect.appendChild(opt);
+            });
+        }
+        chatDocSelect.value = currentVal;
+    }
+
+    function scrollChatToEnd() {
+        if (chatMessagesBox) {
+            chatMessagesBox.scrollTop = chatMessagesBox.scrollHeight;
+        }
+    }
+
+    function formatearTextoMarkdown(texto) {
+        if (!texto) return "";
+        let limpio = texto
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        
+        // Negritas
+        limpio = limpio.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Encabezados
+        limpio = limpio.replace(/^### (.*$)/gim, '<h4 style="margin:0.4rem 0;font-weight:700;">$1</h4>');
+        limpio = limpio.replace(/^## (.*$)/gim, '<h3 style="margin:0.5rem 0;font-weight:700;">$1</h3>');
+        limpio = limpio.replace(/^# (.*$)/gim, '<h2 style="margin:0.6rem 0;font-weight:800;">$1</h2>');
+        // Listas con viñetas
+        limpio = limpio.replace(/^\- (.*$)/gim, '<li style="margin-left:1rem;">$1</li>');
+        limpio = limpio.replace(/^\* (.*$)/gim, '<li style="margin-left:1rem;">$1</li>');
+        // Saltos de línea
+        limpio = limpio.replace(/\n/g, '<br>');
+        return limpio;
+    }
+
+    function agregarBurbujaChat(rol, contenido, timestamp = null) {
+        if (!chatMessagesBox) return;
+
+        // Ocultar mensaje de bienvenida si existe
+        const welcome = chatMessagesBox.querySelector('.chat-welcome-msg');
+        if (welcome) welcome.style.display = 'none';
+
+        const isUser = rol === 'user';
+        const horaStr = timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const row = document.createElement('div');
+        row.className = `chat-row ${isUser ? 'user' : 'ai'}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = `chat-avatar ${isUser ? 'user-av' : 'ai-av'}`;
+        if (isUser) {
+            avatar.textContent = "TÚ";
+        } else {
+            avatar.innerHTML = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`;
+        }
+
+        const bubbleWrap = document.createElement('div');
+        bubbleWrap.className = 'chat-bubble-wrap';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        if (isUser) {
+            bubble.textContent = contenido;
+        } else {
+            bubble.innerHTML = formatearTextoMarkdown(contenido);
+        }
+
+        const timeEl = document.createElement('span');
+        timeEl.className = 'chat-timestamp';
+        timeEl.textContent = horaStr;
+
+        bubbleWrap.appendChild(bubble);
+        bubbleWrap.appendChild(timeEl);
+
+        row.appendChild(avatar);
+        row.appendChild(bubbleWrap);
+
+        chatMessagesBox.appendChild(row);
+        scrollChatToEnd();
+    }
+
+    function mostrarIndicadorPensando() {
+        if (!chatMessagesBox) return null;
+        const typingRow = document.createElement('div');
+        typingRow.className = 'chat-row ai chat-typing-row';
+        typingRow.id = 'chatTypingIndicator';
+
+        typingRow.innerHTML = `
+            <div class="chat-avatar ai-av">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            </div>
+            <div class="chat-bubble-wrap">
+                <div class="chat-bubble chat-typing">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+            </div>
+        `;
+        chatMessagesBox.appendChild(typingRow);
+        scrollChatToEnd();
+        return typingRow;
+    }
+
+    function removerIndicadorPensando() {
+        const ind = document.getElementById('chatTypingIndicator');
+        if (ind) ind.remove();
+    }
+
+    async function cargarHistorialChat() {
+        try {
+            const token = localStorage.getItem("docia_session") ? JSON.parse(localStorage.getItem("docia_session")).token : null;
+            const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+            const res = await fetch(`${API_URL}/api/v1/chat/history`, { headers });
+            if (res.ok) {
+                const messages = await res.json();
+                if (Array.isArray(messages) && messages.length > 0) {
+                    const welcome = chatMessagesBox ? chatMessagesBox.querySelector('.chat-welcome-msg') : null;
+                    if (welcome) welcome.style.display = 'none';
+                    messages.forEach(m => {
+                        agregarBurbujaChat(m.role, m.content, m.created_at);
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn("No se pudo cargar historial previo del chat:", e);
+        }
+    }
+
+    if (chatInputForm) {
+        chatInputForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!chatMessageInput) return;
+            const mensaje = chatMessageInput.value.trim();
+            if (!mensaje) return;
+
+            chatMessageInput.value = "";
+            agregarBurbujaChat('user', mensaje);
+
+            const docId = chatDocSelect ? chatDocSelect.value : null;
+
+            if (btnSendChat) btnSendChat.disabled = true;
+            mostrarIndicadorPensando();
+
+            try {
+                const token = localStorage.getItem("docia_session") ? JSON.parse(localStorage.getItem("docia_session")).token : null;
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const bodyPayload = { content: mensaje };
+                if (docId) bodyPayload.document_id = docId;
+
+                const res = await fetch(`${API_URL}/api/v1/chat/message`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(bodyPayload)
+                });
+
+                removerIndicadorPensando();
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const aiContent = data.assistant_message ? data.assistant_message.content : "Sin respuesta generada.";
+                    agregarBurbujaChat('assistant', aiContent);
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    agregarBurbujaChat('assistant', `⚠️ No pude procesar tu mensaje: ${err.detail || 'Error de conexión con el servicio de IA.'}`);
+                }
+            } catch (err) {
+                removerIndicadorPensando();
+                agregarBurbujaChat('assistant', `⚠️ Error conectando con el servidor de Chat: ${err.message}`);
+            } finally {
+                if (btnSendChat) btnSendChat.disabled = false;
+                if (chatMessageInput) chatMessageInput.focus();
+            }
+        });
+    }
+
+    if (btnClearChat) {
+        btnClearChat.addEventListener('click', async () => {
+            if (!confirm("¿Deseas vaciar el historial de esta conversación?")) return;
+            try {
+                const token = localStorage.getItem("docia_session") ? JSON.parse(localStorage.getItem("docia_session")).token : null;
+                const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+                await fetch(`${API_URL}/api/v1/chat/history`, { method: 'DELETE', headers });
+                if (chatMessagesBox) {
+                    chatMessagesBox.innerHTML = `
+                        <div class="chat-welcome-msg">
+                            <div class="chat-welcome-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3>Historial reiniciado</h3>
+                            <p>Escribe una nueva pregunta o selecciona un documento de contexto para comenzar.</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error("Error vaciando chat:", e);
+            }
+        });
+    }
+
+    // Sincronizar documentos RAG con el select de chat en cargarDocumentosRAG
+    const originalRenderRAG = renderDocumentosRAG;
+    renderDocumentosRAG = function(docs, query = "") {
+        originalRenderRAG(docs, query);
+        actualizarSelectDocumentosChat(docs);
+    };
+
     // Verificar sesión inicial al cargar la página
     function verificarSesionInicial() {
         try {
@@ -1468,6 +1698,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const sessionData = JSON.parse(rawSession);
                 if (sessionData && (sessionData.user || sessionData.name)) {
                     iniciarApp(sessionData);
+                    cargarHistorialChat();
                     return;
                 }
             }
@@ -1479,4 +1710,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     verificarSesionInicial();
 });
+
 

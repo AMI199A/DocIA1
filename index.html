@@ -270,6 +270,14 @@
                             </svg>
                             <span>Gestor RAG</span>
                         </button>
+                        <button class="sidebar-nav-item" id="tabChat" data-tab="sec-chat">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                                </path>
+                            </svg>
+                            <span>Chat IA (Q&A)</span>
+                        </button>
                     </nav>
                 </div>
 
@@ -673,6 +681,72 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </section>
+
+                    <!-- Pestaña 4: Chat Interactivo (Q&A con IA) -->
+                    <section id="sec-chat" class="tab-content hidden chat-section">
+                        <div class="chat-wrapper">
+                            <!-- Cabecera del Chat -->
+                            <div class="chat-header">
+                                <div class="chat-header-info">
+                                    <div class="chat-header-avatar">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="chat-header-title">Chat IA &amp; Q&amp;A Interactivo</h2>
+                                        <p class="chat-header-subtitle">Conversa en tiempo real con Ollama sobre tus documentos o consultas generales</p>
+                                    </div>
+                                </div>
+                                <div class="chat-header-actions">
+                                    <div class="chat-doc-select-wrap">
+                                        <label for="chatDocSelect" class="chat-select-label">Contexto RAG:</label>
+                                        <select id="chatDocSelect" class="chat-doc-select">
+                                            <option value="">Conversación General (Sin documento)</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" id="btnClearChat" class="btn-clear-chat" title="Limpiar historial">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
+                                        <span>Limpiar</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Ventana de Mensajes del Chat -->
+                            <div class="chat-messages-box" id="chatMessagesBox">
+                                <div class="chat-welcome-msg">
+                                    <div class="chat-welcome-icon">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <h3>¿En qué puedo ayudarte hoy?</h3>
+                                    <p>Pregúntame cualquier duda, pide resúmenes específicos o analiza los documentos del Gestor RAG.</p>
+                                </div>
+                            </div>
+
+                            <!-- Barra Inferior de Entrada de Mensaje -->
+                            <form class="chat-input-bar" id="chatInputForm">
+                                <input type="text" id="chatMessageInput" class="chat-text-input"
+                                    placeholder="Escribe tu mensaje o pregunta para la IA..." autocomplete="off" required>
+                                <button type="submit" id="btnSendChat" class="chat-send-btn" title="Enviar mensaje">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </form>
                         </div>
                     </section>
                 </main>
