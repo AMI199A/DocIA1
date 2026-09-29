@@ -13,17 +13,20 @@ router = APIRouter(prefix="/api/v1/templates", tags=["templates"])
 
 class TemplateCreate(BaseModel):
     name: str
-    description: str
-    content: str
+    description: str = ""
+    content: str = ""
     color: str = "bg-blue-500"
 
 class TemplateResponse(BaseModel):
     id: str
     name: str
-    description: str
-    content: str
-    color: str
+    description: str = ""
+    content: str = ""
+    color: str = "bg-blue-500"
     created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 @router.get("/", response_model=List[TemplateResponse])
 async def get_templates(

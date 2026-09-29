@@ -1,52 +1,111 @@
 import os
-import requests
+import httpx
+import traceback
 from dotenv import load_dotenv
 
 load_dotenv()
 
-OLLAMA_URL = os.getenv("OLLAMA_BASE_URL") or os.getenv("OLLAMA_URL") or "http://localhost:11434"
-# Modelo optimizado para respuestas rápidas
-MODELO = os.getenv("OLLAMA_MODEL") or "phi3"
+OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+MODELO = os.getenv("OLLAMA_MODEL", "phi3")
 
-def generar_resumen(texto_contexto: str, modelo: str = MODELO) -> str:
+STRICT_ANTI_LOOP_RULE = (
+    "\n\nREGLA ESTRICTA DE GENERACIÓN:\n"
+    "- Responde EXCLUSIVAMENTE con la estructura del reporte solicitado.\n"
+    "- Queda estrictamente PROHIBIDO repetir títulos, caer en bucles de texto o inventar variaciones de nombres (ej. 'María Gavilotas').\n"
+    "- Mantén estricta fidelidad, coherencia y profesionalismo con los datos del documento proporcionado.\n"
+    "- Formatea la respuesta con Markdown claro y estructurado (encabezados ##, listas y negritas).\n\n"
+)
+
+PROMPT_TEMPLATES = {
+    "reporte_maestro": (
+        "Actúa como un consultor y analista experto. Analiza minuciosamente el siguiente documento y "
+        "elabora un REPORTE MAESTRO completo, altamente estructurado y profesional en español.\n"
+        "Estructura requerida:\n"
+        "1. RESUMEN EJECUTIVO\n"
+        "2. ANÁLISIS DETALLADO Y HALLAZGOS\n"
+        "3. PUNTOS CLAVE Y MÉTRICAS\n"
+        "4. RIESGOS Y OPORTUNIDADES\n"
+        "5. CONCLUSIONES Y RECOMENDACIONES ESTRATÉGICAS\n"
+    ) + STRICT_ANTI_LOOP_RULE,
+    "resumen_ejecutivo": (
+        "Actúa como un redactor ejecutivo de alto nivel. Analiza el siguiente documento y escribe un "
+        "RESUMEN EJECUTIVO conciso, profesional y directo al grano en español. Destaca los antecedentes, "
+        "puntos esenciales, decisiones clave y conclusiones sin redundancias.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
+    "presentacion": (
+        "Actúa como un diseñador de presentaciones y consultor estratégico. Con base en el siguiente documento, "
+        "elabora el contenido estructurado para una PRESENTACIÓN DE DIAPOSITIVAS en español.\n"
+        "Organiza el contenido claramente por diapositivas (ej. [Diapositiva 1: Título], [Diapositiva 2: Objetivos], "
+        "etc.), con encabezados impactantes y viñetas concisas con la información clave.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
+    "cuestionario": (
+        "Actúa como un especialista en evaluación y preguntas de comprensión. Analiza el siguiente documento "
+        "y genera un CUESTIONARIO / BANCO DE PREGUNTAS Y RESPUESTAS (Q&A) en español. "
+        "Incluye preguntas clave de análisis y síntesis con sus respuestas precisas y fundamentadas en el texto.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
+    "puntos_clave": (
+        "Actúa como un sintetizador de información estratégica. Analiza el siguiente documento y extrae los "
+        "PUNTOS CLAVE, IDEAS FUERZA Y CONCLUSIONES en español, organizados con viñetas claras y breves "
+        "explicaciones de alto impacto.\n"
+    ) + STRICT_ANTI_LOOP_RULE,
+    "modo_libre": (
+        "Analiza el siguiente documento y procesa la información de forma profesional en español según "
+        "las directrices especificadas.\n"
+    ) + STRICT_ANTI_LOOP_RULE
+}
+
+async def generar_resumen(
+    texto_contexto: str,
+    tipo_contenido: str = "reporte_maestro",
+    prompt_personalizado: str = ""
+) -> str:
     url = f"{OLLAMA_URL}/api/generate"
     
+    # Seleccionar plantilla de instrucción base
+    base_instruction = PROMPT_TEMPLATES.get(tipo_contenido, PROMPT_TEMPLATES["reporte_maestro"])
+    
+    # Construcción del prompt integrado
+    prompt_parts = [base_instruction]
+    
+    if prompt_personalizado and prompt_personalizado.strip():
+        prompt_parts.append(f"INSTRUCCIÓN / REQUERIMIENTO ESPECÍFICO DEL USUARIO:\n{prompt_personalizado.strip()}\n\n")
+        
+    prompt_parts.append(f"DOCUMENTO A PROCESAR:\n{texto_contexto[:3500]}")
+    
+    prompt_final = "".join(prompt_parts)
+    
     payload = {
-        "model": modelo,
-        "prompt": texto_contexto,
+        "model": MODELO,
+        "prompt": prompt_final,
         "stream": False,
         "options": {
-            "temperature": 0.3,
-            "num_predict": 800
+            "temperature": 0.1,
+            "top_k": 20,
+            "top_p": 0.8,
+            "repeat_penalty": 1.15,
+            "num_predict": 450,
+            "num_ctx": 2048,
+            "num_thread": 4
         }
     }
     
+    # Configuración sin límite de tiempo para lectura (timeout infinito para inferencias complejas)
+    timeout_config = httpx.Timeout(timeout=None, connect=60.0)
+    
     try:
-        # Primer intento con timeout estricto (30s)
-        response = requests.post(url, json=payload, timeout=30)
-        response.raise_for_status()
-        return response.json().get("response", "No se generó respuesta.")
+        async with httpx.AsyncClient(timeout=timeout_config) as client:
+            response = await client.post(url, json=payload, timeout=timeout_config)
+            response.raise_for_status()
+            return response.json().get("response", "No se generó respuesta.")
+    except httpx.ReadTimeout:
+        error_details = traceback.format_exc()
+        print(f"TIMEOUT EN OLLAMA SERVICE:\n{error_details}")
+        return "Error de tiempo de espera: Ollama tardó más de lo esperado en procesar el documento. Intenta con un texto más breve o verifica los recursos del sistema."
+    except httpx.ConnectError:
+        error_details = traceback.format_exc()
+        print(f"ERROR DE CONEXIÓN OLLAMA:\n{error_details}")
+        return f"Error de conexión con Ollama en {OLLAMA_URL}. Asegúrate de que el comando 'ollama serve' esté activo."
     except Exception as e:
-        print(f"Fallo con modelo {modelo} ({str(e)}). Intentando fallback...")
-        
-        # Fallback a un modelo más ligero (ej. phi3)
-        fallback_model = "phi3"
-        payload["model"] = fallback_model
-        
-        try:
-            # Segundo intento con timeout más amplio (600s)
-            fallback_res = requests.post(url, json=payload, timeout=600)
-            fallback_res.raise_for_status()
-            return fallback_res.json().get("response", "No se generó respuesta (fallback).")
-        except Exception as fallback_err:
-            return f"Error conectando con Ollama (incluso en fallback): {str(fallback_err)}"
-
-def get_ollama_tags():
-    url = f"{OLLAMA_URL}/api/tags"
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        models = response.json().get("models", [])
-        return [m.get("name") for m in models]
-    except Exception as e:
-        return ["phi3", "llama3"] # Fallback models
+        error_details = traceback.format_exc()
+        print(f"ERROR EN OLLAMA SERVICE:\n{error_details}")
+        return f"Error conectando con Ollama: {str(e)}. Verifica que el servicio esté corriendo."

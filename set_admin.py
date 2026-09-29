@@ -1,11 +1,14 @@
 import sqlite3
-email = input('Ingresa tu email registrado: ')
-conn = sqlite3.connect('docia.db')
+import os
+
+identificador = input('Ingresa tu username o email registrado: ').strip()
+db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docia.db')
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
-cursor.execute('UPDATE users SET role=? WHERE email=?', ('admin', email))
+cursor.execute('UPDATE users SET role=? WHERE email=? OR username=?', ('admin', identificador, identificador))
 conn.commit()
 if cursor.rowcount > 0:
-    print('�Exito! Rol cambiado a admin.')
+    print(f'¡Éxito! Rol de {identificador} cambiado a admin.')
 else:
-    print('No se encontro ningun usuario con ese email.')
+    print('No se encontró ningún usuario con ese username o email.')
 conn.close()

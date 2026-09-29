@@ -9,4 +9,7 @@ __pycache__
 .vscode
 frontend/node_modules
 frontend/dist
-archivos_generados
+archivos_generados/*
+!archivos_generados/.gitkeep
+archivos_rag/*
+!archivos_rag/.gitkeep
