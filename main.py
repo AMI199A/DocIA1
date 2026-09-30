@@ -13,9 +13,10 @@ import requests
 from services.database import engine, SessionLocal, get_db, Base
 from services.models import User, Report, DocumentRAG, UserRole
 from services.auth_utils import verify_password, get_password_hash, create_access_token
-from services.ollama_service import generar_resumen, OLLAMA_URL
+from services.ollama_service import generar_resumen, generar_contenido_estructurado, OLLAMA_URL
 from services.file_generator import (
     generar_archivo_salida,
+    contenido_a_markdown,
     crear_pdf,
     crear_docx,
     crear_pptx,
@@ -205,33 +206,21 @@ async def process_report(
             db.add(report_record)
             db.commit()
 
-        # 1. Llamar a Ollama para procesar el texto (asíncrono)
-        resumen_ejecutivo = await generar_resumen(
+        # 1. Solicitar contenido JSON para que cada exportador pueda estructurarlo.
+        contenido_estructurado = await generar_contenido_estructurado(
             texto_contexto=texto,
             tipo_contenido=tipo_contenido,
             prompt_personalizado=prompt_personalizado
         )
+        resumen_ejecutivo = contenido_a_markdown(contenido_estructurado)
         elapsed = round(time.time() - start_time, 2)
-        
-        if resumen_ejecutivo.startswith("Error"):
-            tasks_db[task_id] = {
-                "status": "error",
-                "detail": resumen_ejecutivo,
-                "duration": elapsed,
-                "timestamp": time.time()
-            }
-            report_record.status = "error"
-            report_record.error_detail = resumen_ejecutivo
-            report_record.duration = elapsed
-            db.commit()
-            return
             
         # 2. Generar archivo físico con soporte multiformato
         fmt_clean = formato.lower().strip().replace(".", "")
         tipo_clean = tipo_contenido.lower().strip()
         nombre_base = f"docia_{tipo_clean}_{task_id}"
         
-        ruta_archivo = generar_archivo_salida(resumen_ejecutivo, fmt_clean, nombre_base)
+        ruta_archivo = generar_archivo_salida(contenido_estructurado, fmt_clean, nombre_base)
             
         completed_durations.append(elapsed)
         preview_text = resumen_ejecutivo.strip()[:160].replace("\n", " ") + "..."

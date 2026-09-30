@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>{{ report.title }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 22mm 19mm 20mm;
+            @bottom-right {
+                content: "DocIA  |  " counter(page);
+                color: #64748b;
+                font-size: 9pt;
+            }
+        }
+        :root { color-scheme: light; }
+        body {
+            color: #253449;
+            font-family: "DejaVu Sans", sans-serif;
+            font-size: 10.5pt;
+            line-height: 1.65;
+        }
+        header {
+            border-bottom: 3px solid #0e7490;
+            margin-bottom: 24px;
+            padding-bottom: 18px;
+        }
+        .brand {
+            color: #0e7490;
+            font-size: 9pt;
+            font-weight: bold;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        h1 {
+            color: #102a43;
+            font-size: 27pt;
+            line-height: 1.2;
+            margin: 13px 0 7px;
+        }
+        .subtitle, .date { color: #64748b; }
+        .date { font-size: 9pt; margin-top: 18px; }
+        h2 {
+            border-bottom: 1px solid #d8e2ea;
+            color: #0e7490;
+            font-size: 16pt;
+            margin: 27px 0 10px;
+            padding-bottom: 5px;
+        }
+        h3 { color: #164e63; font-size: 12pt; margin: 19px 0 6px; }
+        p { margin: 7px 0 10px; }
+        ul { margin: 7px 0 12px; padding-left: 20px; }
+        li { margin: 4px 0; }
+        .summary {
+            background: #f0f7fa;
+            border-left: 4px solid #0e7490;
+            padding: 12px 16px;
+        }
+        .section, .qa-item { break-inside: avoid; }
+        .question { color: #164e63; font-weight: bold; margin-bottom: 2px; }
+        .answer { margin-top: 0; }
+        .muted { color: #64748b; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">DocIA · Reporte generado</div>
+        <h1>{{ report.title }}</h1>
+        {% if report.subtitle %}<div class="subtitle">{{ report.subtitle }}</div>{% endif %}
+        <div class="date">Generado el {{ generated_at }}</div>
+    </header>
+
+    {% if report.summary %}
+    <section>
+        <h2>Resumen ejecutivo</h2>
+        <div class="summary"><p>{{ report.summary }}</p></div>
+    </section>
+    {% endif %}
+
+    {% for section in report.sections %}
+    <section class="section">
+        <h2>{{ section.title }}</h2>
+        {% for paragraph in section.paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+        {% if section.bullets %}
+        <ul>{% for bullet in section.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>
+        {% endif %}
+    </section>
+    {% endfor %}
+
+    {% if report.slides %}
+    <section>
+        <h2>Contenido de la presentación</h2>
+        {% for slide in report.slides %}
+        <div class="section">
+            <h3>{{ slide.title }}</h3>
+            <ul>{% for bullet in slide.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if report.qa %}
+    <section>
+        <h2>Preguntas y respuestas</h2>
+        {% for item in report.qa %}
+        <div class="qa-item">
+            <p class="question">{{ loop.index }}. {{ item.question }}</p>
+            <p class="answer">{{ item.answer }}</p>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if report.key_points %}
+    <section>
+        <h2>Puntos clave</h2>
+        <ul>{% for point in report.key_points %}<li>{{ point }}</li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+</body>
+</html>

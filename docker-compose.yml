@@ -1,4 +1,13 @@
 services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: docia-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
   # Aplicación DocIA (Backend FastAPI + Frontend integrado)
   app:
     build:
@@ -8,14 +17,17 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Conecta directamente al Ollama que se encuentra corriendo en la máquina host
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # Conecta con el servicio Ollama dentro de la red de Docker
+      - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=phi3
       - STORAGE_PATH=/app/archivos_generados
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    depends_on:
+      - ollama
     volumes:
       - ./docia.db:/app/docia.db
       - ./archivos_generados:/app/archivos_generados
       - ./archivos_rag:/app/archivos_rag
     restart: unless-stopped
+
+volumes:
+  ollama_data:

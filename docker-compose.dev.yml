@@ -1,0 +1,12 @@
+services:
+  app:
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app
+    volumes:
+      - ./main.py:/app/main.py
+      - ./services:/app/services
+      - ./templates:/app/templates
+      - ./index.html:/app/index.html
+      - ./app.js:/app/app.js
+      - ./styles.css:/app/styles.css
+      - ./favicon.svg:/app/favicon.svg
+      - ./static:/app/static
