@@ -163,17 +163,29 @@ def crear_pptx(contenido: str | dict[str, Any], nombre_archivo: str) -> str:
         if len(cover.placeholders) > 1:
             cover.placeholders[1].text = data["subtitle"] or data["summary"]
 
-    slides_data = data["slides"]
+    slides_data = list(data["slides"])
     if not slides_data:
-        slides_data = [
+        slides_data.extend(
             {
                 "title": section.get("title", "Sección"),
                 "bullets": section.get("bullets", []) + section.get("paragraphs", []),
             }
             for section in data["sections"]
-        ]
+        )
     if not slides_data and data["key_points"]:
-        slides_data = [{"title": "Puntos clave", "bullets": data["key_points"]}]
+        slides_data.append({"title": "Puntos clave", "bullets": data["key_points"]})
+    if data["qa"]:
+        slides_data.extend(
+            {
+                "title": f"Pregunta {index}: {item.get('question', '')}",
+                "bullets": [item.get("answer", "")],
+            }
+            for index, item in enumerate(data["qa"], start=1)
+        )
+    if not slides_data:
+        slides_data.append(
+            {"title": "Resumen", "bullets": [data["summary"] or "Sin contenido disponible."]}
+        )
 
     for slide_data in slides_data:
         slide = prs.slides.add_slide(prs.slide_layouts[1])
@@ -227,54 +239,64 @@ def crear_xlsx(contenido: str | dict[str, Any], nombre_archivo: str) -> str:
     data = _normalizar_contenido(contenido)
     ruta = os.path.join(STORAGE_PATH, f"{nombre_archivo}.xlsx")
     wb = openpyxl.Workbook()
-    ws = wb.active
     header_fill = PatternFill(fill_type="solid", fgColor="164E63")
     header_font = Font(bold=True, color="FFFFFF")
     wrap = Alignment(vertical="top", wrap_text=True)
 
-    if data["qa"]:
-        ws.title = "Cuestionario"
-        ws.append(["Pregunta", "Respuesta"])
-        for item in data["qa"]:
-            ws.append([
-                sanitizar_texto_para_excel(item.get("question", "")),
-                sanitizar_texto_para_excel(item.get("answer", "")),
-            ])
-        ws.column_dimensions["A"].width = 48
-        ws.column_dimensions["B"].width = 90
-        ws.freeze_panes = "A2"
-        ws.auto_filter.ref = ws.dimensions
-        for row in ws.iter_rows(min_row=2):
-            for cell in row:
-                cell.data_type = "s"
-                cell.alignment = wrap
-    else:
-        ws.title = "Reporte"
-        ws.append([data["title"]])
-        if data["summary"]:
-            ws.append(["Resumen ejecutivo"])
-            ws.append([data["summary"]])
-        for section in data["sections"]:
-            ws.append([section.get("title", "Sección")])
-            for paragraph in section.get("paragraphs", []):
-                ws.append([paragraph])
-            for bullet in section.get("bullets", []):
-                ws.append([f"• {bullet}"])
-        for point in data["key_points"]:
-            ws.append([f"• {point}"])
-        ws.column_dimensions["A"].width = 110
+    def formatear_hoja(ws, column_widths: dict[str, int]) -> None:
+        for column, width in column_widths.items():
+            ws.column_dimensions[column].width = width
         for row in ws.iter_rows():
             for cell in row:
                 if cell.value is not None:
                     cell.value = sanitizar_texto_para_excel(cell.value)
                     cell.data_type = "s"
                     cell.alignment = wrap
+        for cell in ws[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        ws.row_dimensions[1].height = 28
 
-    for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    ws.row_dimensions[1].height = 28
+    ws = wb.active
+    ws.title = "Reporte"
+    ws.append(["Contenido", "Detalle"])
+    ws.append(["Título", data["title"]])
+    if data["subtitle"]:
+        ws.append(["Subtítulo", data["subtitle"]])
+    if data["summary"]:
+        ws.append(["Resumen ejecutivo", data["summary"]])
+    for section in data["sections"]:
+        ws.append([section.get("title", "Sección"), ""])
+        for paragraph in section.get("paragraphs", []):
+            ws.append(["", paragraph])
+        for bullet in section.get("bullets", []):
+            ws.append(["", f"• {bullet}"])
+    for point in data["key_points"]:
+        ws.append(["Punto clave", f"• {point}"])
+    formatear_hoja(ws, {"A": 30, "B": 100})
+
+    if data["qa"]:
+        ws = wb.create_sheet("Cuestionario")
+        ws.append(["Pregunta", "Respuesta"])
+        for item in data["qa"]:
+            ws.append([
+                sanitizar_texto_para_excel(item.get("question", "")),
+                sanitizar_texto_para_excel(item.get("answer", "")),
+            ])
+        ws.freeze_panes = "A2"
+        ws.auto_filter.ref = ws.dimensions
+        formatear_hoja(ws, {"A": 48, "B": 90})
+
+    if data["slides"]:
+        ws = wb.create_sheet("Diapositivas")
+        ws.append(["Diapositiva", "Puntos"])
+        for slide in data["slides"]:
+            ws.append([
+                slide.get("title", "Diapositiva"),
+                "\n".join(f"• {bullet}" for bullet in slide.get("bullets", [])),
+            ])
+        formatear_hoja(ws, {"A": 36, "B": 100})
 
     wb.save(ruta)
     return ruta

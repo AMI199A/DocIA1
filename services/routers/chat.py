@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from services.database import get_db
 from services.models import User, ChatMessage, DocumentRAG
 from services.auth_utils import get_current_user
-from services.ollama_service import generar_resumen
+from services.gemini_service import generar_resumen
 
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 
@@ -77,14 +77,15 @@ async def send_message(
         f"\nUsuario: {body.content.strip()}\n"
     )
 
-    respuesta = await generar_resumen(
-        texto_contexto=prompt,
-        tipo_contenido="modo_libre",
-        prompt_personalizado="Responde directamente la consulta del usuario de forma analítica y útil."
-    )
-    if respuesta.startswith("Error"):
+    try:
+        respuesta = await generar_resumen(
+            texto_contexto=prompt,
+            tipo_contenido="modo_libre",
+            prompt_personalizado="Responde directamente la consulta del usuario de forma analítica y útil."
+        )
+    except RuntimeError as exc:
         db.rollback()
-        raise HTTPException(status_code=503, detail=respuesta)
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     assistant_msg_id = str(uuid.uuid4())[:8]
     assistant_msg = ChatMessage(

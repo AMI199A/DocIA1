@@ -8,12 +8,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-import requests
 
 from services.database import engine, SessionLocal, get_db, Base
 from services.models import User, Report, DocumentRAG, UserRole
 from services.auth_utils import verify_password, get_password_hash, create_access_token
-from services.ollama_service import generar_resumen, generar_contenido_estructurado, OLLAMA_URL
+from services.gemini_service import (
+    GEMINI_MODEL,
+    generar_contenido_estructurado,
+)
 from services.file_generator import (
     generar_archivo_salida,
     contenido_a_markdown,
@@ -369,15 +371,9 @@ async def health_check():
     return {"status": "ok", "service": "DocIA API"}
 
 @app.get("/api/v1/models/tags")
-def obtener_modelos_ollama():
-    """Retorna los modelos disponibles en la instancia de Ollama."""
-    try:
-        res = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
-        if res.status_code == 200:
-            return res.json().get("models", [])
-    except Exception:
-        pass
-    return [{"name": "phi3"}, {"name": "llama3"}]
+def obtener_modelo_gemini():
+    """Retorna el modelo Gemini configurado para la API."""
+    return [{"name": GEMINI_MODEL}]
 
 @app.get("/api/v1/reportes/recientes")
 def obtener_reportes_recientes(db: Session = Depends(get_db)):

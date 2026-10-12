@@ -1,14 +1,4 @@
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: docia-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-
-  # Aplicación DocIA (Backend FastAPI + Frontend integrado)
   app:
     build:
       context: .
@@ -17,17 +7,11 @@ services:
     ports:
       - "8000:8000"
     environment:
-      # Conecta con el servicio Ollama dentro de la red de Docker
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - OLLAMA_MODEL=phi3
-      - STORAGE_PATH=/app/archivos_generados
-    depends_on:
-      - ollama
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?Define GEMINI_API_KEY en el archivo .env}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      STORAGE_PATH: /app/archivos_generados
     volumes:
       - ./docia.db:/app/docia.db
       - ./archivos_generados:/app/archivos_generados
       - ./archivos_rag:/app/archivos_rag
     restart: unless-stopped
-
-volumes:
-  ollama_data:

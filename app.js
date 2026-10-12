@@ -974,7 +974,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 promptPersonalizado = promptPersonalizado ? `${razonamientoHint}\n${promptPersonalizado}` : razonamientoHint;
             }
 
-            document.querySelector('.loader-text').textContent = "Iniciando proceso con Ollama...";
+            document.querySelector('.loader-text').textContent = "Generando contenido con Gemini...";
 
             try {
                 let response;
@@ -1013,9 +1013,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         detail = errData.detail || detail;
                     } catch (e) { }
 
-                    if (response.status === 401 || (detail && detail.toLowerCase().includes("conectando con ollama"))) {
-                        throw new Error(`Error ${response.status}: Asegúrate de que Ollama esté iniciado en el puerto 11434. (${detail})`);
-                    }
                     throw new Error(detail);
                 }
 
@@ -1710,5 +1707,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     verificarSesionInicial();
 });
-
 
