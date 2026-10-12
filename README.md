@@ -9,13 +9,14 @@ Aplicación web para analizar documentos y generar reportes con Gemini. La API y
 
 ## Inicio normal
 
-Abre PowerShell en la carpeta del proyecto. Crea el archivo de configuración local y agrega tu clave de Gemini a `.env`:
+Abre PowerShell en la carpeta del proyecto. Asegúrate de que exista un archivo `.env` en la raíz del proyecto con tu clave de Gemini y el modelo que deseas usar:
 
-```powershell
-if (-not (Test-Path .\.env)) { Copy-Item .env.example .env }
+```dotenv
+GEMINI_API_KEY=tu_clave_de_gemini
+GEMINI_MODEL=gemini-3.1-flash-lite
 ```
 
-Reemplaza `GEMINI_API_KEY` en `.env` con una clave válida. No subas ese archivo a Git. En una copia recién descargada desde GitHub, crea también el archivo de SQLite para que Docker no lo cree como directorio:
+No subas `.env` a Git. En una copia recién descargada desde GitHub, crea también el archivo de SQLite para que Docker no lo cree como directorio:
 
 ```powershell
 if (-not (Test-Path .\docia.db)) { New-Item -ItemType File .\docia.db | Out-Null }
