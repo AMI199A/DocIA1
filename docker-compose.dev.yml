@@ -10,3 +10,6 @@ services:
       - ./styles.css:/app/styles.css
       - ./favicon.svg:/app/favicon.svg
       - ./static:/app/static
+      - ./src:/app/src
+      - ./server.js:/app/server.js
+      - ./package.json:/app/package.json

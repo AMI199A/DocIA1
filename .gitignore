@@ -21,3 +21,4 @@ archivos_generados/
 *.docx
 *.pptx
 *.xlsx
+node_modules/

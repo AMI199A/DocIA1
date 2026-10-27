@@ -70,7 +70,7 @@ async def send_message(
         history_text += f"{prefix}: {msg.content}\n"
 
     prompt = (
-        "Eres un asistente analítico experto de DocIA. "
+        "Eres un asistente analítico experto de DocIA PRO. "
         "Responde en español de manera clara, precisa y profesional con formato Markdown."
         f"{contexto}"
         f"\n\nHistorial previo:\n{history_text}"

@@ -368,7 +368,34 @@ def obtener_estado_reporte(task_id: str, db: Session = Depends(get_db)):
 @app.get("/api/v1/health")
 @app.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "DocIA API"}
+    return {"status": "ok", "service": "DocIA PRO API"}
+
+@app.post("/api/presentations")
+@app.post("/api/v1/presentations")
+async def generar_presentacion_directa(request: Request):
+    """
+    Endpoint compatible con la especificación de presentaciones de DocIA PRO.
+    Recibe un objeto JSON con title y slides, y devuelve el archivo .pptx listo para descarga.
+    """
+    try:
+        spec = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Cuerpo de petición JSON inválido.")
+
+    if not spec or not isinstance(spec.get("slides"), list) or len(spec["slides"]) == 0:
+        raise HTTPException(status_code=400, detail="Se requiere un arreglo 'slides' no vacío.")
+
+    temp_id = uuid.uuid4().hex[:8]
+    nombre_base = f"docia_presentacion_{temp_id}"
+    ruta = crear_pptx(spec, nombre_base)
+    if not os.path.isfile(ruta):
+        raise HTTPException(status_code=500, detail="No se pudo generar la presentación.")
+
+    return FileResponse(
+        ruta,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        filename="presentacion.pptx"
+    )
 
 @app.get("/api/v1/models/tags")
 def obtener_modelo_gemini():

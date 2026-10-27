@@ -240,15 +240,28 @@ body {
 }
 
 .brand-icon {
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-    backdrop-filter: blur(4px);
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.brand-icon:hover {
+    transform: scale(1.08);
+}
+
+.brand-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
+    display: block;
 }
 
 .brand-icon svg {
@@ -2244,13 +2257,27 @@ button {
 
 .login-brand {
     margin-bottom: 1.15rem;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .login-brand .brand-icon {
-    width: 40px;
-    height: 40px;
-    background: #eff6ff;
-    border-color: #bfdbfe;
+    width: 76px;
+    height: 76px;
+    background: transparent;
+    border: none;
+    margin-bottom: 0.25rem;
+    filter: drop-shadow(0 8px 24px rgba(26, 107, 255, 0.4));
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.login-brand .brand-icon:hover {
+    transform: scale(1.05) rotate(1deg);
+    filter: drop-shadow(0 10px 28px rgba(26, 107, 255, 0.55));
+}
+
+.login-brand .brand-logo-img {
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
 }
 
 .login-brand .brand-title {
@@ -2836,8 +2863,48 @@ button {
 }
 
 .chat-avatar.ai-av {
-    background: #2563eb;
-    color: #ffffff;
+    background: transparent !important;
+    border: none !important;
+    padding: 0;
+    overflow: hidden;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+}
+
+.chat-avatar.ai-av img.ai-avatar-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.3));
+}
+
+.brand-welcome-icon {
+    background: transparent !important;
+    border: none !important;
+    width: 76px !important;
+    height: 76px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+.brand-welcome-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 18px rgba(26, 107, 255, 0.4));
+    animation: pulseLogo 4s ease-in-out infinite;
+}
+
+@keyframes pulseLogo {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
 }
 
 .chat-avatar svg {

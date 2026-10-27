@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (resultReportTitle) resultReportTitle.textContent = report.nombre;
             if (resultReportDate) resultReportDate.textContent = `${report.fecha} (${report.tamano_kb} KB)`;
 
-            const rawContent = report.contenido || report.preview || "Reporte Ejecutivo generado por DocIA.\nHaz clic en el botón inferior para descargar el archivo.";
+            const rawContent = report.contenido || report.preview || "Reporte Ejecutivo generado por DocIA PRO.\nHaz clic en el botón inferior para descargar el archivo.";
             if (window.marked && typeof marked.parse === 'function') {
                 reportViewer.innerHTML = marked.parse(rawContent);
             } else {
@@ -1527,7 +1527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isUser) {
             avatar.textContent = "TÚ";
         } else {
-            avatar.innerHTML = `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`;
+            avatar.innerHTML = `<img src="/static/logo.png" alt="DocIA PRO" class="ai-avatar-logo">`;
         }
 
         const bubbleWrap = document.createElement('div');
@@ -1563,7 +1563,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         typingRow.innerHTML = `
             <div class="chat-avatar ai-av">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <img src="/static/logo.png" alt="DocIA PRO" class="ai-avatar-logo">
             </div>
             <div class="chat-bubble-wrap">
                 <div class="chat-bubble chat-typing">
@@ -1662,14 +1662,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (chatMessagesBox) {
                     chatMessagesBox.innerHTML = `
                         <div class="chat-welcome-msg">
-                            <div class="chat-welcome-icon">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
-                                    </path>
-                                </svg>
+                            <div class="chat-welcome-icon brand-welcome-icon">
+                                <img src="/static/logo.png" alt="DocIA PRO" class="brand-welcome-logo">
                             </div>
-                            <h3>Historial reiniciado</h3>
+                            <h3>¿En qué puedo ayudarte hoy con DocIA PRO?</h3>
                             <p>Escribe una nueva pregunta o selecciona un documento de contexto para comenzar.</p>
                         </div>
                     `;

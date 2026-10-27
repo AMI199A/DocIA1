@@ -1,0 +1,27 @@
+{
+  "name": "backend-doc-ia",
+  "version": "1.0.0",
+  "description": "Aplicación web para analizar documentos y generar reportes con Gemini. La API y la interfaz se ejecutan en Docker; los reportes se pueden exportar a PDF, Word, PowerPoint, Markdown, texto, Excel y HTML.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js",
+    "presentation": "node src/presentation/cli.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AMI199A/DocIA1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AMI199A/DocIA1/issues"
+  },
+  "homepage": "https://github.com/AMI199A/DocIA1#readme",
+  "dependencies": {
+    "express": "^5.3.0",
+    "pptxgenjs": "^4.0.1"
+  }
+}
