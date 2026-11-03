@@ -469,3 +469,4 @@ En cumplimiento de las buenas prácticas de la industria y los estándares del c
 
 *DocIA PRO · Sistema de Inteligencia Documental Avanzada*  
 *Desarrollado para la materia Análisis de Sistemas II · Octubre 2026*
+
